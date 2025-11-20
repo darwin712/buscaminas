@@ -4,6 +4,7 @@
  */
 package proyectobuscaminas;
 
+import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.SwingUtilities;
 
 /**
@@ -16,6 +17,7 @@ public class ProyectoBuscaminas {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        FlatLightLaf.setup();
         Menu frame = new Menu();
         
         SwingUtilities.invokeLater(() -> {
