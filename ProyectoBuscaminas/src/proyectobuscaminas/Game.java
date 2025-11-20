@@ -29,7 +29,7 @@ public class Game extends javax.swing.JFrame {
         initComponents();
         crearTablero();
         setTitle("Partida");
-        
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
 
     }

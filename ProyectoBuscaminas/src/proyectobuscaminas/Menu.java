@@ -24,7 +24,17 @@ public class Menu extends javax.swing.JFrame {
     public Menu() {
         initComponents();
         setTitle("Buscaminas");
-        Musica.getInstance().playFromURL("https://mi-servidor.com/musica/tema.mp3");
+        
+        if(Musica.getInstance().isPlaying() == false && Musica.getInstance().wasPlayedOnce() == false){
+            Musica.getInstance().playMusic("recursos/Infectious.wav");
+            Musica.getInstance().setWasPlayedOnce(true);
+        }
+        
+        if (Musica.getInstance().isPlaying()) {
+            btnMusic.setText("ON");
+        } else {
+            btnMusic.setText("OFF");
+        }
     }
 
     /**
@@ -180,7 +190,13 @@ public class Menu extends javax.swing.JFrame {
     }//GEN-LAST:event_btnJugarActionPerformed
 
     private void btnMusicActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnMusicActionPerformed
-        // TODO add your handling code here:
+        if(Musica.getInstance().isPlaying()){
+            Musica.getInstance().stopMusic();
+            btnMusic.setText("OFF");
+        }else{
+            Musica.getInstance().playMusic("recursos/Infectious.wav");
+            btnMusic.setText("ON");
+        }
     }//GEN-LAST:event_btnMusicActionPerformed
 
     /**
