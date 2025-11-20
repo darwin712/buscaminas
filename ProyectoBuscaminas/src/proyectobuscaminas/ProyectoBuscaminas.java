@@ -16,7 +16,7 @@ public class ProyectoBuscaminas {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        Testeo frame = new Testeo();
+        Menu frame = new Menu();
         
         SwingUtilities.invokeLater(() -> {
             frame.setVisible(true);
