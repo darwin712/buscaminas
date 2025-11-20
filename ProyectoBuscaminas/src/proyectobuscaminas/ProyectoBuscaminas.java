@@ -18,7 +18,7 @@ public class ProyectoBuscaminas {
      */
     public static void main(String[] args) {
         FlatLightLaf.setup();
-        Menu frame = new Menu();
+        Ventana frame = new Ventana();
         
         SwingUtilities.invokeLater(() -> {
             frame.setVisible(true);
