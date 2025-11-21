@@ -4,6 +4,7 @@
  */
 package proyectobuscaminas;
 
+import java.awt.CardLayout;
 import java.awt.GridLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -64,27 +65,39 @@ public class Juego extends javax.swing.JPanel {
 
         panelTablero = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
+        btnRegresar = new javax.swing.JButton();
 
         setBackground(new java.awt.Color(92, 103, 125));
 
         panelTablero.setBackground(new java.awt.Color(255, 255, 255));
         panelTablero.setMaximumSize(new java.awt.Dimension(450, 450));
         panelTablero.setMinimumSize(new java.awt.Dimension(450, 450));
+        panelTablero.setPreferredSize(new java.awt.Dimension(450, 450));
 
         javax.swing.GroupLayout panelTableroLayout = new javax.swing.GroupLayout(panelTablero);
         panelTablero.setLayout(panelTableroLayout);
         panelTableroLayout.setHorizontalGroup(
             panelTableroLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 450, Short.MAX_VALUE)
+            .addGap(0, 653, Short.MAX_VALUE)
         );
         panelTableroLayout.setVerticalGroup(
             panelTableroLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 450, Short.MAX_VALUE)
+            .addGap(0, 611, Short.MAX_VALUE)
         );
 
-        jLabel1.setFont(new java.awt.Font("Segoe UI", 3, 24)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Segoe UI", 3, 48)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setText("Gameplay");
+
+        btnRegresar.setBackground(new java.awt.Color(255, 255, 255));
+        btnRegresar.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
+        btnRegresar.setForeground(new java.awt.Color(0, 0, 0));
+        btnRegresar.setText("Regresar");
+        btnRegresar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnRegresarActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -93,25 +106,38 @@ public class Juego extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addGap(30, 30, 30)
                 .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 706, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(59, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(panelTablero, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(168, 168, 168))
+                .addContainerGap(1173, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(panelTablero, javax.swing.GroupLayout.PREFERRED_SIZE, 653, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(715, 715, 715))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(btnRegresar, javax.swing.GroupLayout.PREFERRED_SIZE, 243, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(95, 95, 95))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addGap(27, 27, 27)
                 .addComponent(jLabel1)
-                .addGap(36, 36, 36)
-                .addComponent(panelTablero, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(60, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addComponent(panelTablero, javax.swing.GroupLayout.PREFERRED_SIZE, 611, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(btnRegresar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGap(24, 24, 24))
         );
     }// </editor-fold>//GEN-END:initComponents
 
+    private void btnRegresarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegresarActionPerformed
+        CardLayout cl = (CardLayout) getParent().getLayout();
+        cl.show(getParent(), "menu");
+    }//GEN-LAST:event_btnRegresarActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnRegresar;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel panelTablero;
     // End of variables declaration//GEN-END:variables

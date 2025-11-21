@@ -26,13 +26,13 @@ public class Ventana extends javax.swing.JFrame {
         card = new CardLayout();
         jPanel1.setLayout(card);
 
-        jPanel1.add(new Menuu(), "menu");
+        jPanel1.add(new Menu(), "menu");
         jPanel1.add(new Juego(), "juego");
         
         card.show(jPanel1, "menu");
         
         if(Musica.getInstance().isPlaying() == false && Musica.getInstance().wasPlayedOnce() == false){
-            Musica.getInstance().playMusic("recursos/Infectious.wav");
+            Musica.getInstance().playMusic("recursos/Tobu-Infectious.ogg");
             Musica.getInstance().setWasPlayedOnce(true);
         }
     }
@@ -50,16 +50,7 @@ public class Ventana extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 715, Short.MAX_VALUE)
-        );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 556, Short.MAX_VALUE)
-        );
+        jPanel1.setLayout(new java.awt.CardLayout());
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);

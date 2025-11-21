@@ -11,18 +11,16 @@ import java.io.IOException;
  * @author davek
  */
 public class Musica {
-    private static Musica instance; //Instancia unica
-    private boolean isPlaying; //La musica esta reproduciendose?
-    private boolean wasPlayedOnce; //Se reprodujo al menos 1 vez?
+    private static Musica instance;
+    private boolean isPlaying;
+    private boolean wasPlayedOnce;
     private Clip audioClip;
 
-    //Constructor para utilizar el Singleton
     private Musica() {
         isPlaying = false;
         wasPlayedOnce = false;
     }
 
-    //Metodo para obtener la instancia unica
     public static Musica getInstance() {
         if (instance == null) {
             instance = new Musica();
@@ -30,22 +28,72 @@ public class Musica {
         return instance;
     }
 
-    //Metodo para reproducir la musica principal de la aplicacion en bucle
+    /**
+     * Convierte cualquier formato (incluyendo OGG) a PCM_SIGNED.
+     * Esto es obligatorio porque Clip NO puede reproducir directamente Vorbis.
+     */
+    private AudioInputStream getPCMStream(String filePath) throws Exception {
+        File file = new File(filePath);
+
+        // Stream original (OGG, WAV, etc.)
+        AudioInputStream originalStream = AudioSystem.getAudioInputStream(file);
+        AudioFormat baseFormat = originalStream.getFormat();
+
+        // Convertir a formato compatible
+        AudioFormat decodedFormat = new AudioFormat(
+                AudioFormat.Encoding.PCM_SIGNED,
+                baseFormat.getSampleRate(),
+                16,
+                baseFormat.getChannels(),
+                baseFormat.getChannels() * 2,
+                baseFormat.getSampleRate(),
+                false
+        );
+
+        return AudioSystem.getAudioInputStream(decodedFormat, originalStream);
+    }
+
+    /**
+     * Reproduce música en bucle.
+     */
     public void playMusic(String filePath) {
         try {
-            File audioFile = new File(filePath);
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioFile);
+            AudioInputStream pcmStream = getPCMStream(filePath);
+
             audioClip = AudioSystem.getClip();
-            audioClip.open(audioStream);
-            audioClip.loop(Clip.LOOP_CONTINUOUSLY); // Reproducir en bucle
+            audioClip.open(pcmStream);
+
+            audioClip.loop(Clip.LOOP_CONTINUOUSLY);
             audioClip.start();
+
             isPlaying = true;
-        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
-            System.err.println("Error al reproducir el archivo: " + e.getMessage());
+            wasPlayedOnce = true;
+
+        } catch (Exception e) {
+            System.err.println("Error al reproducir música OGG/WAV: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    //Metodo para parar la musica
+    /**
+     * Reproduce efectos de sonido (sin loop)
+     */
+    public void playSFX(String filePath) {
+        try {
+            AudioInputStream pcmStream = getPCMStream(filePath);
+
+            Clip sfx = AudioSystem.getClip();
+            sfx.open(pcmStream);
+            sfx.start();
+
+        } catch (Exception e) {
+            System.err.println("Error al reproducir SFX OGG/WAV: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Detener música
+     */
     public void stopMusic() {
         if (audioClip != null && audioClip.isRunning()) {
             audioClip.stop();
@@ -53,31 +101,15 @@ public class Musica {
         }
     }
 
-    //Metodo para reproducir efectos de sonido exclusivamente (sin bucle)
-    public void playSFX(String filePath) {
-        try {
-            File audioFile = new File(filePath);
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioFile);
-            Clip soundClip = AudioSystem.getClip();
-            soundClip.open(audioStream);
-            soundClip.start();
-        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
-            System.err.println("Error al reproducir el efecto de sonido: " + e.getMessage());
-        }
-    }
-
-    //Metodo para verificar si la musica esta sonando
     public boolean isPlaying() {
         return isPlaying;
     }
 
-    //Metodo para verificar si la musica ha sonado aunque sea 1 vez
     public boolean wasPlayedOnce() {
         return wasPlayedOnce;
     }
 
-    //Metodo para establecer el estado de reproduccion
-    public void setWasPlayedOnce(boolean wasPlayedOnce) {
-        this.wasPlayedOnce = wasPlayedOnce;
+    public void setWasPlayedOnce(boolean value) {
+        this.wasPlayedOnce = value;
     }
 }
