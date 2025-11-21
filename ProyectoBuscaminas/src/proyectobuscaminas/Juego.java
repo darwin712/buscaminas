@@ -1,144 +1,217 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JPanel.java to edit this template
- */
 package proyectobuscaminas;
 
-import java.awt.CardLayout;
-import java.awt.GridLayout;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import static javax.swing.WindowConstants.DISPOSE_ON_CLOSE;
+import java.awt.*;
+import java.io.*;
+import java.net.Socket;
+import javax.swing.*;
 
-/**
- *
- * @author davek
- */
 public class Juego extends javax.swing.JPanel {
     
     private JButton[][] botones;
-    private final int filas = 10;
-    private final int columnas = 10;
+    private Tablero tableroLogico;
+    private Socket socket;
+    private ObjectOutputStream out;
+    private ObjectInputStream in;
+    private boolean esMiTurno = false;
     
-    /**
-     * Creates new form Juego
-     */
+    private JPanel panelTablero;
+    private JLabel lblEstado;
+    private JLabel lblTurno; // Nuevo indicador visual
+
     public Juego() {
-        initComponents();
-        crearTablero();
+        setLayout(new BorderLayout());
+        setBackground(Color.DARK_GRAY);
+
+        // Panel Superior (Info)
+        JPanel top = new JPanel();
+        lblTurno = new JLabel("Esperando conexión...");
+        lblTurno.setFont(new Font("Arial", Font.BOLD, 18));
+        top.add(lblTurno);
+        add(top, BorderLayout.NORTH);
+
+        // Panel Central (Tablero y Estado)
+        JPanel centro = new JPanel(new GridBagLayout());
+        centro.setBackground(Color.DARK_GRAY);
+        
+        panelTablero = new JPanel();
+        panelTablero.setVisible(false);
+        centro.add(panelTablero);
+        
+        lblEstado = new JLabel("Esperando oponente...", SwingConstants.CENTER);
+        lblEstado.setFont(new Font("SansSerif", Font.BOLD, 24));
+        lblEstado.setForeground(Color.WHITE);
+        centro.add(lblEstado);
+
+        add(centro, BorderLayout.CENTER);
     }
 
-    private void crearTablero(){
-        botones = new JButton[filas][columnas];
-    
-        panelTablero.setLayout(new GridLayout(filas, columnas));
+    public void iniciarJuegoConConexion(Socket s, ObjectOutputStream o, ObjectInputStream i) {
+        this.socket = s;
+        this.out = o;
+        this.in = i;
+        
+        lblEstado.setVisible(true);
+        panelTablero.setVisible(false);
+        lblTurno.setText("Buscando partida...");
 
-        for (int f = 0; f < filas; f++) {
-            for (int c = 0; c < columnas; c++) {
-
-                JButton btn = new JButton();
-                btn.setFocusable(false);
-
-                // acción de clic
-                final int x = f;
-                final int y = c;
-                btn.addActionListener(e -> casillaPresionada(x, y));
-
-                panelTablero.add(btn);
-                botones[f][c] = btn;
+        // Hilo de escucha del Cliente
+        new Thread(() -> {
+            try {
+                while (true) {
+                    Mensaje msg = (Mensaje) in.readObject();
+                    procesarMensaje(msg);
+                }
+            } catch (Exception e) {
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(this, "Conexión perdida con el servidor.");
+                    regresarAlMenu();
+                });
             }
+        }).start();
+    }
+
+    private void procesarMensaje(Mensaje msg) {
+        SwingUtilities.invokeLater(() -> {
+            switch (msg.getTipo()) {
+                case "INICIO":
+                    tableroLogico = (Tablero) msg.getContenido();
+                    crearTableroVisual();
+                    lblEstado.setVisible(false);
+                    panelTablero.setVisible(true);
+                    break;
+                    
+                case "TURNO":
+                    esMiTurno = (boolean) msg.getContenido();
+                    lblTurno.setText(esMiTurno ? "TU TURNO" : "TURNO DEL OPONENTE");
+                    lblTurno.setForeground(esMiTurno ? Color.GREEN : Color.RED);
+                    bloquearBotonesSegunTurno();
+                    break;
+                    
+                case "CASILLA_ACTUALIZADA":
+                    String[] datos = ((String) msg.getContenido()).split(",");
+                    actualizarCasillaRemota(Integer.parseInt(datos[0]), Integer.parseInt(datos[1]), Integer.parseInt(datos[2]));
+                    break;
+                    
+                case "GANASTE":
+                case "PERDISTE":
+                    String texto = msg.getTipo().equals("GANASTE") ? "¡VICTORIA!" : "DERROTA :(";
+                    int op = JOptionPane.showConfirmDialog(this, texto + "\n" + msg.getContenido() + "\n¿Jugar otra vez?", "Fin de Partida", JOptionPane.YES_NO_OPTION);
+                    
+                    if (op == JOptionPane.YES_OPTION) {
+                        enviarMensaje("BUSCAR_PARTIDA", "Clasico");
+                        panelTablero.setVisible(false);
+                        lblEstado.setText("Buscando nuevo oponente...");
+                        lblEstado.setVisible(true);
+                    } else {
+                        regresarAlMenu();
+                    }
+                    break;
+                    
+                case "OPONENTE_DESCONECTADO":
+                     JOptionPane.showMessageDialog(this, "El oponente se desconectó.");
+                     regresarAlMenu();
+                     break;
+            }
+        });
+    }
+
+    private void crearTableroVisual() {
+        panelTablero.removeAll();
+        int f = tableroLogico.getFilas();
+        int c = tableroLogico.getColumnas();
+        panelTablero.setLayout(new GridLayout(f, c));
+        botones = new JButton[f][c];
+        
+        // Tamaño fijo para evitar que se vea gigante
+        panelTablero.setPreferredSize(new Dimension(c * 35, f * 35));
+
+        for (int i = 0; i < f; i++) {
+            for (int j = 0; j < c; j++) {
+                JButton btn = new JButton();
+                btn.setMargin(new Insets(0,0,0,0));
+                btn.setFont(new Font("Arial", Font.BOLD, 12));
+                final int r = i;
+                final int col = j;
+                btn.addActionListener(e -> clickCasilla(r, col));
+                botones[i][j] = btn;
+                panelTablero.add(btn);
+            }
+        }
+        
+        panelTablero.revalidate();
+        panelTablero.repaint();
+        
+        // Forzar empaquetado
+        Window w = SwingUtilities.getWindowAncestor(this);
+        if(w instanceof JFrame) ((JFrame)w).pack();
+    }
+
+    private void clickCasilla(int f, int c) {
+        if (!esMiTurno) return;
+        
+        Casilla casilla = tableroLogico.getCasilla(f, c);
+        if (casilla.esRevelado()) return;
+
+        // Acción local inmediata para feedback visual
+        casilla.setRevelado(true);
+        botones[f][c].setEnabled(false);
+        botones[f][c].setBackground(Color.LIGHT_GRAY);
+
+        if (casilla.isMina()) {
+            botones[f][c].setBackground(Color.RED);
+            botones[f][c].setText("X");
+            enviarMensaje("PERDIO", null);
+        } else {
+            if(casilla.getVecinos() > 0) {
+                botones[f][c].setText("" + casilla.getVecinos());
+                colorearNumero(botones[f][c], casilla.getVecinos());
+            }
+            enviarMensaje("CLICK", f + "," + c);
         }
     }
     
-    private void casillaPresionada(int f, int c){
-        System.out.println("Presionaste " + f + "," + c);
+    private void actualizarCasillaRemota(int f, int c, int vecinos) {
+        if(f >= 0 && f < botones.length && c >= 0 && c < botones[0].length) {
+             botones[f][c].setEnabled(false);
+             botones[f][c].setBackground(Color.LIGHT_GRAY);
+             if(vecinos > 0) {
+                 botones[f][c].setText(String.valueOf(vecinos));
+                 colorearNumero(botones[f][c], vecinos);
+             }
+        }
     }
     
-    /**
-     * This method is called from within the constructor to initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is always
-     * regenerated by the Form Editor.
-     */
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+    private void colorearNumero(JButton btn, int n) {
+        switch(n) {
+            case 1: btn.setForeground(Color.BLUE); break;
+            case 2: btn.setForeground(new Color(0, 128, 0)); break; // Verde oscuro
+            case 3: btn.setForeground(Color.RED); break;
+            default: btn.setForeground(new Color(0, 0, 128)); break;
+        }
+    }
 
-        panelTablero = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
-        btnRegresar = new javax.swing.JButton();
+    private void bloquearBotonesSegunTurno() {
+        if (botones == null) return;
+        // Solo cambiamos la interactividad global del panel, no botón por botón para no afectar a los revelados
+        // Pero Swing JButton enabled es visual.
+        // La protección real está en clickCasilla: if (!esMiTurno) return;
+    }
 
-        setBackground(new java.awt.Color(92, 103, 125));
-
-        panelTablero.setBackground(new java.awt.Color(255, 255, 255));
-        panelTablero.setMaximumSize(new java.awt.Dimension(450, 450));
-        panelTablero.setMinimumSize(new java.awt.Dimension(450, 450));
-        panelTablero.setPreferredSize(new java.awt.Dimension(450, 450));
-
-        javax.swing.GroupLayout panelTableroLayout = new javax.swing.GroupLayout(panelTablero);
-        panelTablero.setLayout(panelTableroLayout);
-        panelTableroLayout.setHorizontalGroup(
-            panelTableroLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 653, Short.MAX_VALUE)
-        );
-        panelTableroLayout.setVerticalGroup(
-            panelTableroLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 611, Short.MAX_VALUE)
-        );
-
-        jLabel1.setFont(new java.awt.Font("Segoe UI", 3, 48)); // NOI18N
-        jLabel1.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel1.setText("Gameplay");
-
-        btnRegresar.setBackground(new java.awt.Color(255, 255, 255));
-        btnRegresar.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
-        btnRegresar.setForeground(new java.awt.Color(0, 0, 0));
-        btnRegresar.setText("Regresar");
-        btnRegresar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnRegresarActionPerformed(evt);
+    private void enviarMensaje(String tipo, Object contenido) {
+        try {
+            if (out != null) {
+                out.writeObject(new Mensaje(tipo, contenido));
+                out.flush();
+                out.reset(); // CRÍTICO
             }
-        });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
-        this.setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(30, 30, 30)
-                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 706, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(1173, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(panelTablero, javax.swing.GroupLayout.PREFERRED_SIZE, 653, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(715, 715, 715))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(btnRegresar, javax.swing.GroupLayout.PREFERRED_SIZE, 243, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(95, 95, 95))))
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(27, 27, 27)
-                .addComponent(jLabel1)
-                .addGap(18, 18, 18)
-                .addComponent(panelTablero, javax.swing.GroupLayout.PREFERRED_SIZE, 611, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btnRegresar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(24, 24, 24))
-        );
-    }// </editor-fold>//GEN-END:initComponents
-
-    private void btnRegresarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegresarActionPerformed
+    private void regresarAlMenu() {
+        try { socket.close(); } catch(Exception e){}
         CardLayout cl = (CardLayout) getParent().getLayout();
         cl.show(getParent(), "menu");
-    }//GEN-LAST:event_btnRegresarActionPerformed
-
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btnRegresar;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JPanel panelTablero;
-    // End of variables declaration//GEN-END:variables
+    }
 }
