@@ -1,5 +1,8 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package proyectobuscaminas;
-
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
@@ -7,7 +10,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
+/**
+ *
+ * @author davek
+ */
 public class ServidorBuscaminas {
     private static final int PUERTO = 12345;
     private static final List<ManejadorCliente> clientesEnEspera = Collections.synchronizedList(new ArrayList<>());

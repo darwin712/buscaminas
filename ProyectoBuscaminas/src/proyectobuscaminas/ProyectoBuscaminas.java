@@ -1,10 +1,15 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package proyectobuscaminas;
-
 import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.SwingUtilities;
-
+/**
+ *
+ * @author davek
+ */
 public class ProyectoBuscaminas {
-
     public static void main(String[] args) {
         
         try {
@@ -20,5 +25,4 @@ public class ProyectoBuscaminas {
             frame.setVisible(true);
         });
     }
-    
 }

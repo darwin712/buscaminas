@@ -1,12 +1,18 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package proyectobuscaminas;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+/**
+ *
+ * @author davek
+ */
 public class GestorPersistencia {
     private static final String ARCHIVO_DATOS = "buscaminas_data.dat";
     private Map<String, Jugador> jugadores;

@@ -1,8 +1,16 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package proyectobuscaminas;
 
 import java.io.Serializable;
 
-public class Tablero implements Serializable {
+/**
+ *
+ * @author davek
+ */
+public class Tablero implements Serializable{
     private int filas;
     private int columnas;
     private int numMinas;
