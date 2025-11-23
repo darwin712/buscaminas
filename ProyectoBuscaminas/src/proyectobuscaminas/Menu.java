@@ -3,20 +3,39 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JPanel.java to edit this template
  */
 package proyectobuscaminas;
-
-import java.awt.CardLayout;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
+import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPasswordField;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JPasswordField;
+import java.awt.CardLayout; // IMPORTANTE: Importación corregida
+
 
 /**
+ *
  *
  * @author davek
  */
 public class Menu extends javax.swing.JPanel {
-
+    private Socket socketTemp;
+    private ObjectOutputStream outTemp;
+    private ObjectInputStream inTemp;
     /**
-     * Creates new form Menuu
+     * Creates new form Menu
      */
     public Menu() {
         initComponents();
@@ -27,6 +46,30 @@ public class Menu extends javax.swing.JPanel {
         }
     }
 
+    private boolean conectarServidor() {
+        try {
+            if (socketTemp == null || socketTemp.isClosed()) {
+                socketTemp = new Socket("localhost", 12345);
+                outTemp = new ObjectOutputStream(socketTemp.getOutputStream());
+                inTemp = new ObjectInputStream(socketTemp.getInputStream());
+            }
+            return true;
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "No se puede conectar al servidor.");
+            return false;
+        }
+    }
+    
+    private void irAlJuego(Socket s, ObjectOutputStream o, ObjectInputStream i) {
+        // El componente en el índice 1 del panel padre (Ventana) es Juego.java
+        Juego panelJuego = (Juego) getParent().getComponent(1);
+        panelJuego.iniciarJuegoConConexion(s, o, i);
+        
+        // Obtenemos el CardLayout del panel padre (que es mainPanel en Ventana.java)
+        java.awt.CardLayout cl = (java.awt.CardLayout) getParent().getLayout();
+        cl.show(getParent(), "juego");
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -36,19 +79,92 @@ public class Menu extends javax.swing.JPanel {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
+        btnMusic = new javax.swing.JButton();
+        jPanel2 = new javax.swing.JPanel();
+        jPanel3 = new javax.swing.JPanel();
+        jPanel4 = new javax.swing.JPanel();
         btnJugar = new javax.swing.JButton();
         btnLogin = new javax.swing.JButton();
         btnRegistro = new javax.swing.JButton();
         btnRecords = new javax.swing.JButton();
-        btnMusic = new javax.swing.JButton();
 
         setBackground(new java.awt.Color(92, 103, 125));
+        setLayout(new java.awt.BorderLayout());
+
+        jPanel1.setBackground(new java.awt.Color(92, 103, 125));
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 3, 48)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Buscaminas");
+
+        btnMusic.setBackground(new java.awt.Color(255, 255, 255));
+        btnMusic.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
+        btnMusic.setForeground(new java.awt.Color(0, 0, 0));
+        btnMusic.setText("ON");
+        btnMusic.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnMusicActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(217, 217, 217)
+                .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 319, Short.MAX_VALUE)
+                .addGap(152, 152, 152)
+                .addComponent(btnMusic)
+                .addContainerGap())
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(btnMusic)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                .addGap(0, 36, Short.MAX_VALUE)
+                .addComponent(jLabel1))
+        );
+
+        add(jPanel1, java.awt.BorderLayout.PAGE_START);
+
+        jPanel2.setBackground(new java.awt.Color(92, 103, 125));
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 100, Short.MAX_VALUE)
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 533, Short.MAX_VALUE)
+        );
+
+        add(jPanel2, java.awt.BorderLayout.LINE_END);
+
+        jPanel3.setBackground(new java.awt.Color(92, 103, 125));
+
+        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
+        jPanel3.setLayout(jPanel3Layout);
+        jPanel3Layout.setHorizontalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 100, Short.MAX_VALUE)
+        );
+        jPanel3Layout.setVerticalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 533, Short.MAX_VALUE)
+        );
+
+        add(jPanel3, java.awt.BorderLayout.LINE_START);
+
+        jPanel4.setBackground(new java.awt.Color(92, 103, 125));
 
         btnJugar.setBackground(new java.awt.Color(255, 255, 255));
         btnJugar.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
@@ -90,78 +206,120 @@ public class Menu extends javax.swing.JPanel {
             }
         });
 
-        btnMusic.setBackground(new java.awt.Color(255, 255, 255));
-        btnMusic.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
-        btnMusic.setForeground(new java.awt.Color(0, 0, 0));
-        btnMusic.setText("ON");
-        btnMusic.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnMusicActionPerformed(evt);
-            }
-        });
+        javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
+        jPanel4.setLayout(jPanel4Layout);
+        jPanel4Layout.setHorizontalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addGap(113, 113, 113)
+                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(btnRecords, javax.swing.GroupLayout.PREFERRED_SIZE, 327, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnRegistro, javax.swing.GroupLayout.PREFERRED_SIZE, 327, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnLogin, javax.swing.GroupLayout.PREFERRED_SIZE, 327, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnJugar, javax.swing.GroupLayout.PREFERRED_SIZE, 327, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(126, Short.MAX_VALUE))
+        );
+        jPanel4Layout.setVerticalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addGap(49, 49, 49)
+                .addComponent(btnJugar)
+                .addGap(36, 36, 36)
+                .addComponent(btnLogin)
+                .addGap(35, 35, 35)
+                .addComponent(btnRegistro)
+                .addGap(40, 40, 40)
+                .addComponent(btnRecords)
+                .addContainerGap(153, Short.MAX_VALUE))
+        );
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
-        this.setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(205, 205, 205)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(btnJugar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(btnLogin, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(btnRegistro, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(btnRecords, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(152, 152, 152)
-                .addComponent(btnMusic)
-                .addGap(20, 20, 20))
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(52, 52, 52)
-                        .addComponent(jLabel1)
-                        .addGap(56, 56, 56)
-                        .addComponent(btnJugar)
-                        .addGap(37, 37, 37)
-                        .addComponent(btnLogin)
-                        .addGap(40, 40, 40)
-                        .addComponent(btnRegistro)
-                        .addGap(38, 38, 38)
-                        .addComponent(btnRecords))
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(btnMusic, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(124, Short.MAX_VALUE))
-        );
+        add(jPanel4, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
+    private void btnJugarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnJugarActionPerformed
+        if (socketTemp == null || socketTemp.isClosed()) {
+            JOptionPane.showMessageDialog(this, "Debes Iniciar Sesion primero.");
+            return;
+        }
+
+        try {
+            // Enviar solicitud de partida (Modo Único: Clasico)
+            outTemp.writeObject(new Mensaje("BUSCAR_PARTIDA", "Clasico"));
+            
+            // Ir a la pantalla de juego
+            irAlJuego(socketTemp, outTemp, inTemp);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }//GEN-LAST:event_btnJugarActionPerformed
+
     private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoginActionPerformed
+        if (!conectarServidor()) return;
+
         JTextField nombreField = new JTextField();
         JPasswordField passField = new JPasswordField();
+        Object[] inputs = {"Usuario:", nombreField, "Contraseña:", passField};
 
-        Object[] inputs = {
-            "Nombre: ",nombreField,
-            "Password: ",passField
-        };
-
-        int form = JOptionPane.showConfirmDialog(null, inputs, "Login", JOptionPane.OK_CANCEL_OPTION);
+        int op = JOptionPane.showConfirmDialog(this, inputs, "Login", JOptionPane.OK_CANCEL_OPTION);
+        if (op == JOptionPane.OK_OPTION) {
+            try {
+                String creds = nombreField.getText() + ":" + new String(passField.getPassword());
+                outTemp.writeObject(new Mensaje("LOGIN", creds));
+                
+                Mensaje respuesta = (Mensaje) inTemp.readObject();
+                if (respuesta.getTipo().equals("LOGIN_OK")) {
+                    JOptionPane.showMessageDialog(this, "Bienvenido " + nombreField.getText());
+                } else {
+                    JOptionPane.showMessageDialog(this, "Error: " + respuesta.getContenido(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception e) { e.printStackTrace(); }
+        }
     }//GEN-LAST:event_btnLoginActionPerformed
 
     private void btnRegistroActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRegistroActionPerformed
-        // TODO add your handling code here:
+        if (!conectarServidor()) return;
+
+        JTextField nombreField = new JTextField();
+        JPasswordField passField = new JPasswordField();
+        Object[] inputs = {"Nuevo Usuario:", nombreField, "Nueva Contraseña:", passField};
+
+        int op = JOptionPane.showConfirmDialog(this, inputs, "Registro", JOptionPane.OK_CANCEL_OPTION);
+        if (op == JOptionPane.OK_OPTION) {
+            try {
+                String creds = nombreField.getText() + ":" + new String(passField.getPassword());
+                outTemp.writeObject(new Mensaje("REGISTRO", creds));
+                
+                Mensaje respuesta = (Mensaje) inTemp.readObject();
+                JOptionPane.showMessageDialog(this, respuesta.getContenido());
+            } catch (Exception e) { e.printStackTrace(); }
+        }
     }//GEN-LAST:event_btnRegistroActionPerformed
 
     private void btnRecordsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRecordsActionPerformed
-        // TODO add your handling code here:
+        if (socketTemp == null || socketTemp.isClosed()) {
+            if (!conectarServidor()) {
+                JOptionPane.showMessageDialog(this, "Conectate primero.");
+                return;
+            }
+        }
+        
+        try {
+            outTemp.writeObject(new Mensaje("RECORDS", null));
+            Mensaje respuesta = (Mensaje) inTemp.readObject();
+            
+            if (respuesta.getTipo().equals("RECORDS_DATA")) {
+                JTextArea textArea = new JTextArea((String) respuesta.getContenido());
+                textArea.setEditable(false);
+                JScrollPane scrollPane = new JScrollPane(textArea);
+                scrollPane.setPreferredSize(new Dimension(400, 300));
+                JOptionPane.showMessageDialog(this, scrollPane, "Historial de Partidas", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al obtener records.");
+        }
     }//GEN-LAST:event_btnRecordsActionPerformed
-
-    private void btnJugarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnJugarActionPerformed
-        CardLayout cl = (CardLayout) getParent().getLayout();
-        cl.show(getParent(), "juego");
-    }//GEN-LAST:event_btnJugarActionPerformed
 
     private void btnMusicActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnMusicActionPerformed
         if(Musica.getInstance().isPlaying()){
@@ -173,6 +331,9 @@ public class Menu extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_btnMusicActionPerformed
 
+    
+    
+    
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnJugar;
@@ -181,5 +342,9 @@ public class Menu extends javax.swing.JPanel {
     private javax.swing.JButton btnRecords;
     private javax.swing.JButton btnRegistro;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
     // End of variables declaration//GEN-END:variables
 }
