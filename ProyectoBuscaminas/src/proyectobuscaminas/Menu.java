@@ -30,7 +30,7 @@ import java.awt.CardLayout; // IMPORTANTE: Importación corregida
  *
  * @author davek
  */
-public class Menu extends javax.swing.JPanel {
+public class Menu extends Fondo {
     private Socket socketTemp;
     private ObjectOutputStream outTemp;
     private ObjectInputStream inTemp;
@@ -38,7 +38,18 @@ public class Menu extends javax.swing.JPanel {
      * Creates new form Menu
      */
     public Menu() {
+        super("/proyectobuscaminas/imagenes/abstractbg.jpg");
+        
         initComponents();
+        
+        Deco deco = new Deco();
+        
+        deco.agregarAnimacionHover(btnJugar);
+        deco.agregarAnimacionHover(btnLogin);
+        deco.agregarAnimacionHover(btnRegistro);
+        deco.agregarAnimacionHover(btnRecords);
+
+        
         if (Musica.getInstance().isPlaying()) {
             btnMusic.setText("ON");
         } else {
@@ -78,6 +89,7 @@ public class Menu extends javax.swing.JPanel {
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
+        java.awt.GridBagConstraints gridBagConstraints;
 
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
@@ -85,6 +97,7 @@ public class Menu extends javax.swing.JPanel {
         jPanel2 = new javax.swing.JPanel();
         jPanel3 = new javax.swing.JPanel();
         jPanel4 = new javax.swing.JPanel();
+        jPanel6 = new javax.swing.JPanel();
         btnJugar = new javax.swing.JButton();
         btnLogin = new javax.swing.JButton();
         btnRegistro = new javax.swing.JButton();
@@ -94,14 +107,24 @@ public class Menu extends javax.swing.JPanel {
         setLayout(new java.awt.BorderLayout());
 
         jPanel1.setBackground(new java.awt.Color(92, 103, 125));
+        jPanel1.setOpaque(false);
+        jPanel1.setLayout(new java.awt.GridBagLayout());
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 3, 48)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel1.setText("Buscaminas");
+        jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/proyectobuscaminas/imagenes/intentodelogo1.png"))); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.ipady = 39;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 88, 0, 0);
+        jPanel1.add(jLabel1, gridBagConstraints);
 
         btnMusic.setBackground(new java.awt.Color(255, 255, 255));
-        btnMusic.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
+        btnMusic.setFont(new java.awt.Font("Comic Sans MS", 1, 24)); // NOI18N
         btnMusic.setForeground(new java.awt.Color(0, 0, 0));
         btnMusic.setText("ON");
         btnMusic.addActionListener(new java.awt.event.ActionListener() {
@@ -109,32 +132,17 @@ public class Menu extends javax.swing.JPanel {
                 btnMusicActionPerformed(evt);
             }
         });
-
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(217, 217, 217)
-                .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 319, Short.MAX_VALUE)
-                .addGap(152, 152, 152)
-                .addComponent(btnMusic)
-                .addContainerGap())
-        );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(btnMusic)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addGap(0, 36, Short.MAX_VALUE)
-                .addComponent(jLabel1))
-        );
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.insets = new java.awt.Insets(6, 53, 0, 6);
+        jPanel1.add(btnMusic, gridBagConstraints);
 
         add(jPanel1, java.awt.BorderLayout.PAGE_START);
 
         jPanel2.setBackground(new java.awt.Color(92, 103, 125));
+        jPanel2.setOpaque(false);
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -144,12 +152,13 @@ public class Menu extends javax.swing.JPanel {
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 533, Short.MAX_VALUE)
+            .addGap(0, 591, Short.MAX_VALUE)
         );
 
         add(jPanel2, java.awt.BorderLayout.LINE_END);
 
         jPanel3.setBackground(new java.awt.Color(92, 103, 125));
+        jPanel3.setOpaque(false);
 
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
@@ -159,15 +168,21 @@ public class Menu extends javax.swing.JPanel {
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 533, Short.MAX_VALUE)
+            .addGap(0, 591, Short.MAX_VALUE)
         );
 
         add(jPanel3, java.awt.BorderLayout.LINE_START);
 
         jPanel4.setBackground(new java.awt.Color(92, 103, 125));
+        jPanel4.setOpaque(false);
+        jPanel4.setLayout(new java.awt.GridBagLayout());
+
+        jPanel6.setBackground(new java.awt.Color(92, 103, 125));
+        jPanel6.setOpaque(false);
+        jPanel6.setLayout(null);
 
         btnJugar.setBackground(new java.awt.Color(255, 255, 255));
-        btnJugar.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
+        btnJugar.setFont(new java.awt.Font("Comic Sans MS", 1, 36)); // NOI18N
         btnJugar.setForeground(new java.awt.Color(0, 0, 0));
         btnJugar.setText("Jugar");
         btnJugar.addActionListener(new java.awt.event.ActionListener() {
@@ -175,9 +190,11 @@ public class Menu extends javax.swing.JPanel {
                 btnJugarActionPerformed(evt);
             }
         });
+        jPanel6.add(btnJugar);
+        btnJugar.setBounds(20, 20, 320, 55);
 
         btnLogin.setBackground(new java.awt.Color(255, 255, 255));
-        btnLogin.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
+        btnLogin.setFont(new java.awt.Font("Comic Sans MS", 1, 36)); // NOI18N
         btnLogin.setForeground(new java.awt.Color(0, 0, 0));
         btnLogin.setText("Iniciar sesion");
         btnLogin.addActionListener(new java.awt.event.ActionListener() {
@@ -185,19 +202,24 @@ public class Menu extends javax.swing.JPanel {
                 btnLoginActionPerformed(evt);
             }
         });
+        jPanel6.add(btnLogin);
+        btnLogin.setBounds(20, 110, 320, 58);
 
         btnRegistro.setBackground(new java.awt.Color(255, 255, 255));
-        btnRegistro.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
+        btnRegistro.setFont(new java.awt.Font("Comic Sans MS", 1, 35)); // NOI18N
         btnRegistro.setForeground(new java.awt.Color(0, 0, 0));
         btnRegistro.setText("Registrar usuario");
+        btnRegistro.setPreferredSize(new java.awt.Dimension(187, 57));
         btnRegistro.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnRegistroActionPerformed(evt);
             }
         });
+        jPanel6.add(btnRegistro);
+        btnRegistro.setBounds(20, 210, 320, 57);
 
         btnRecords.setBackground(new java.awt.Color(255, 255, 255));
-        btnRecords.setFont(new java.awt.Font("Segoe UI", 1, 36)); // NOI18N
+        btnRecords.setFont(new java.awt.Font("Comic Sans MS", 1, 36)); // NOI18N
         btnRecords.setForeground(new java.awt.Color(0, 0, 0));
         btnRecords.setText("Records");
         btnRecords.addActionListener(new java.awt.event.ActionListener() {
@@ -205,33 +227,17 @@ public class Menu extends javax.swing.JPanel {
                 btnRecordsActionPerformed(evt);
             }
         });
+        jPanel6.add(btnRecords);
+        btnRecords.setBounds(20, 300, 320, 58);
 
-        javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
-        jPanel4.setLayout(jPanel4Layout);
-        jPanel4Layout.setHorizontalGroup(
-            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel4Layout.createSequentialGroup()
-                .addGap(113, 113, 113)
-                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(btnRecords, javax.swing.GroupLayout.PREFERRED_SIZE, 327, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnRegistro, javax.swing.GroupLayout.PREFERRED_SIZE, 327, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnLogin, javax.swing.GroupLayout.PREFERRED_SIZE, 327, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnJugar, javax.swing.GroupLayout.PREFERRED_SIZE, 327, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(126, Short.MAX_VALUE))
-        );
-        jPanel4Layout.setVerticalGroup(
-            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel4Layout.createSequentialGroup()
-                .addGap(49, 49, 49)
-                .addComponent(btnJugar)
-                .addGap(36, 36, 36)
-                .addComponent(btnLogin)
-                .addGap(35, 35, 35)
-                .addComponent(btnRegistro)
-                .addGap(40, 40, 40)
-                .addComponent(btnRecords)
-                .addContainerGap(153, Short.MAX_VALUE))
-        );
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.ipadx = 364;
+        gridBagConstraints.ipady = 389;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.insets = new java.awt.Insets(47, 153, 154, 198);
+        jPanel4.add(jPanel6, gridBagConstraints);
 
         add(jPanel4, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
@@ -346,5 +352,6 @@ public class Menu extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
+    private javax.swing.JPanel jPanel6;
     // End of variables declaration//GEN-END:variables
 }
