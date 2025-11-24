@@ -1,52 +1,63 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package proyectobuscaminas;
-import java.util.*;
-/**
- *
- * @author davek
- */
+
+import java.util.Random;
+
 public class GeneradorTableros {
-    private List<Tablero> plantillas;
-    private Random random;
 
-    public GeneradorTableros() {
-        plantillas = new ArrayList<>();
-        random = new Random();
-        crearPlantillasPorDefecto();
-    }
+    public Tablero[] generarTableros(String dificultad) {
+        int filas = 10;
+        int columnas = 10;
+        int minas = 10;
 
-    private void crearPlantillasPorDefecto() {
+       
         try {
-            plantillas.add(new Tablero(8, 8, 10));
-            plantillas.add(new Tablero(10, 10, 15));
-            plantillas.add(new Tablero(12, 12, 20));
-            plantillas.add(new Tablero(8, 8, 12));
-            plantillas.add(new Tablero(10, 10, 18));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public Tablero[] generarTableros() {
-        if (plantillas.size() < 2) {
-            return new Tablero[] {
-                    new Tablero(8, 8, 10),
-                    new Tablero(8, 8, 10)
-            };
+            int tam = Integer.parseInt(dificultad);
+            filas = tam;
+            columnas = tam;
+            
+            if (tam == 8) minas = 10;
+            else if (tam == 10) minas = 15;
+            else if (tam == 12) minas = 25;
+            
+        } catch (NumberFormatException e) {
+            System.out.println("Error en dificultad, usando por defecto 10x10");
         }
 
-        int idx1 = random.nextInt(plantillas.size());
-        int idx2;
-        do {
-            idx2 = random.nextInt(plantillas.size());
-        } while (idx2 == idx1 && plantillas.size() > 1);
+       
+        Tablero t1 = new Tablero(filas, columnas, 0); 
+        Tablero t2 = new Tablero(filas, columnas, 0);
+        
+        Random random = new Random();
 
-        return new Tablero[] {
-                new Tablero(plantillas.get(idx1)),
-                new Tablero(plantillas.get(idx2))
-        };
+    
+        int minasPuestas1 = 0;
+        while (minasPuestas1 < minas) {
+            int f = random.nextInt(filas);
+            int c = random.nextInt(columnas);
+            
+            
+            if (!t1.getCasilla(f, c).isMina()) {
+                t1.getCasilla(f, c).setMina(true);
+                minasPuestas1++;
+            }
+        }
+
+       
+        int minasPuestas2 = 0;
+        while (minasPuestas2 < minas) {
+            int f = random.nextInt(filas);
+            int c = random.nextInt(columnas);
+            
+            if (!t2.getCasilla(f, c).isMina()) {
+                t2.getCasilla(f, c).setMina(true);
+                minasPuestas2++;
+            }
+        }
+        
+        // 4. Calcular pistas
+        t1.calcularVecinos();
+        t2.calcularVecinos();
+
+        return new Tablero[]{t1, t2};
     }
 }

@@ -50,7 +50,7 @@ public class Tablero implements Serializable{
         }
     }
 
-    private void calcularVecinos() {
+    public void calcularVecinos() {
         for (int i = 0; i < filas; i++) {
             for (int j = 0; j < columnas; j++) {
                 if (!casillas[i][j].isMina()) {

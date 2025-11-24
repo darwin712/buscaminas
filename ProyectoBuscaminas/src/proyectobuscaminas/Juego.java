@@ -3,7 +3,11 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JPanel.java to edit this template
  */
 package proyectobuscaminas;
+
+
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.Socket;
 import javax.swing.*;
@@ -12,13 +16,20 @@ import javax.swing.*;
  * @author davek
  */
 public class Juego extends javax.swing.JPanel {
-
+    
+    
     private JButton[][] botones;
     private Tablero tableroLogico;
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private boolean esMiTurno = false;
+    
+
+    private int filas = 10;
+    private int columnas = 10;
+
+ 
     
     /**
      * Creates new form Juego
@@ -122,9 +133,7 @@ public class Juego extends javax.swing.JPanel {
 
         jPanel4.setBackground(new java.awt.Color(92, 103, 125));
 
-        btnRegresar.setBackground(new java.awt.Color(255, 255, 255));
         btnRegresar.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        btnRegresar.setForeground(new java.awt.Color(0, 0, 0));
         btnRegresar.setText("Salir");
         btnRegresar.setActionCommand("");
         btnRegresar.addActionListener(new java.awt.event.ActionListener() {
@@ -264,14 +273,17 @@ public class Juego extends javax.swing.JPanel {
         add(jPanel5, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
 
+    // --- MÉTODOS LÓGICOS ---
+
     public void iniciarJuegoConConexion(Socket s, ObjectOutputStream o, ObjectInputStream i) {
         this.socket = s;
         this.out = o;
         this.in = i;
         
         panelTablero1.setVisible(false);
+        jLabel2.setText("Esperando rival...");
 
-        // Hilo de escucha del Cliente
+        // Hilo de escucha
         new Thread(() -> {
             try {
                 while (true) {
@@ -279,48 +291,128 @@ public class Juego extends javax.swing.JPanel {
                     procesarMensaje(msg);
                 }
             } catch (Exception e) {
-                SwingUtilities.invokeLater(() -> {
-                    JOptionPane.showMessageDialog(this, "Conexión perdida con el servidor.");
-                    btnRegresar.doClick();
-                });
+                // Si se cierra el socket (esperado al salir), no imprimas error
+                if(!socket.isClosed()) {
+                    System.err.println("Error en Juego: " + e.getMessage());
+                }
             }
         }).start();
     }
 
-    private void procesarMensaje(Mensaje msg) {
+    public void procesarMensaje(Mensaje msg) {
         SwingUtilities.invokeLater(() -> {
             switch (msg.getTipo()) {
+                case "VOTACION":
+                    jLabel2.setText("Votando..."); 
+                    String[] opciones = {"Pequeño (8x8)", "Normal (10x10)", "Grande (12x12)"};
+                    int seleccion = JOptionPane.showOptionDialog(
+                            this,
+                            "¡Rival Encontrado!\n¿De qué tamaño quieres el tablero?", 
+                            "Votación de Mapa", 
+                            JOptionPane.DEFAULT_OPTION, 
+                            JOptionPane.QUESTION_MESSAGE, 
+                            null, 
+                            opciones, 
+                            opciones[1]
+                    );
+
+                    String voto = "10";
+                    if (seleccion == 0) voto = "8";
+                    if (seleccion == 2) voto = "12";
+
+                    System.out.println("Enviando voto desde Juego: " + voto);
+                    enviarMensaje("ENVIAR_VOTO", voto);
+                    break;
+
+                case "TAMANO":
+                    try {
+                        String tam = (String) msg.getContenido();
+                        this.filas = Integer.parseInt(tam);
+                        this.columnas = Integer.parseInt(tam);
+                    } catch(Exception e){ e.printStackTrace(); }
+                    break;
+
                 case "INICIO":
-                    tableroLogico = (Tablero) msg.getContenido();
-                    crearTableroVisual();
+                    this.tableroLogico = (Tablero) msg.getContenido();
+                    if(tableroLogico != null) {
+                        this.filas = tableroLogico.getFilas();
+                        this.columnas = tableroLogico.getColumnas();
+                    }
+                    crearTableroVisual(); 
                     panelTablero1.setVisible(true);
+                    jLabel4.setText("00:00"); 
                     break;
                     
                 case "TURNO":
                     esMiTurno = (boolean) msg.getContenido();
-                    bloquearBotonesSegunTurno();
+                    if(esMiTurno) {
+                        jLabel2.setText("¡Tu Turno!"); 
+                        jLabel2.setForeground(Color.GREEN);
+                    } else {
+                        jLabel2.setText("Turno Rival");
+                        jLabel2.setForeground(Color.RED);
+                    }
                     break;
                     
                 case "CASILLA_ACTUALIZADA":
                     String[] datos = ((String) msg.getContenido()).split(",");
                     actualizarCasillaRemota(Integer.parseInt(datos[0]), Integer.parseInt(datos[1]), Integer.parseInt(datos[2]));
                     break;
+
+                // --- NUEVO: REVELAR TODAS LAS MINAS ---
+                case "MINAS":
+                     String data = (String) msg.getContenido();
+                     if(data != null && !data.isEmpty()) {
+                         String[] listaMinas = data.split(";");
+                         for(String m : listaMinas) {
+                             if(m.contains(",")) {
+                                 String[] coords = m.split(",");
+                                 int fm = Integer.parseInt(coords[0]);
+                                 int cm = Integer.parseInt(coords[1]);
+                                 // Pintar la mina en el tablero visual
+                                 if(botones != null) {
+                                     botones[fm][cm].setBackground(Color.RED);
+                                     botones[fm][cm].setText("X");
+                                     botones[fm][cm].setEnabled(false);
+                                 }
+                             }
+                         }
+                     }
+                     break;
                     
                 case "GANASTE":
                 case "PERDISTE":
                     String texto = msg.getTipo().equals("GANASTE") ? "¡VICTORIA!" : "DERROTA :(";
-                    int op = JOptionPane.showConfirmDialog(this, texto + "\n" + msg.getContenido() + "\n¿Jugar otra vez?", "Fin de Partida", JOptionPane.YES_NO_OPTION);
                     
-                    if (op == JOptionPane.YES_OPTION) {
-                        enviarMensaje("BUSCAR_PARTIDA", "Clasico");
-                        panelTablero1.setVisible(false);
-                    } else {
-                        btnRegresar.doClick();
+                    // --- CAMBIO: OPCIÓN JUGAR OTRA VEZ ---
+                    Object[] options = {"Jugar otra vez", "Salir al Menu"};
+                    int op = JOptionPane.showOptionDialog(this, 
+                            texto + "\n" + msg.getContenido(), 
+                            "Fin de Partida", 
+                            JOptionPane.YES_NO_OPTION, 
+                            JOptionPane.INFORMATION_MESSAGE, 
+                            null, 
+                            options, 
+                            options[0]);
+                    
+                    // Volvemos al menú en ambos casos
+                    btnRegresar.doClick();
+
+                    // Si eligió "Jugar otra vez" (índice 0), activamos la búsqueda automática
+                    if (op == 0) {
+                        // Buscamos el JPanel padre (CardLayout) y obtenemos el componente Menu (usualmente index 0 o buscamos por clase)
+                        Container parent = getParent();
+                        for (Component comp : parent.getComponents()) {
+                            if (comp instanceof Menu) {
+                                ((Menu) comp).solicitarPartidaAutomatica();
+                                break;
+                            }
+                        }
                     }
                     break;
                     
                 case "OPONENTE_DESCONECTADO":
-                     JOptionPane.showMessageDialog(this, "El oponente se desconectó.");
+                     JOptionPane.showMessageDialog(this, "El oponente se desconectó. Ganaste.");
                      btnRegresar.doClick();
                      break;
             }
@@ -329,63 +421,51 @@ public class Juego extends javax.swing.JPanel {
 
     private void crearTableroVisual() {
         panelTablero1.removeAll();
-        int f = tableroLogico.getFilas();
-        int c = tableroLogico.getColumnas();
-        panelTablero1.setLayout(new GridLayout(f, c));
-        botones = new JButton[f][c];
+        panelTablero1.setLayout(new GridLayout(filas, columnas));
+        botones = new JButton[filas][columnas];
         
-        // Tamaño fijo para evitar que se vea gigante
-        panelTablero1.setPreferredSize(new Dimension(c * 35, f * 35));
-
-        for (int i = 0; i < f; i++) {
-            for (int j = 0; j < c; j++) {
+        for (int i = 0; i < filas; i++) {
+            for (int j = 0; j < columnas; j++) {
                 JButton btn = new JButton();
                 btn.setMargin(new Insets(0,0,0,0));
-                btn.setFont(new Font("Arial", Font.BOLD, 12));
+                btn.setFont(new Font("Arial", Font.BOLD, 14));
+                btn.setFocusable(false);
+                
                 final int r = i;
                 final int col = j;
+                
                 btn.addActionListener(e -> clickCasilla(r, col));
                 botones[i][j] = btn;
                 panelTablero1.add(btn);
             }
         }
-        
         panelTablero1.revalidate();
         panelTablero1.repaint();
-        
-        // Forzar empaquetado
-        Window w = SwingUtilities.getWindowAncestor(this);
-        if(w instanceof JFrame) ((JFrame)w).pack();
     }
 
     private void clickCasilla(int f, int c) {
-        if (!esMiTurno) return;
+        if (!esMiTurno) {
+            JOptionPane.showMessageDialog(this, "Espera tu turno.");
+            return;
+        }
         
         Casilla casilla = tableroLogico.getCasilla(f, c);
         if (casilla.esRevelado()) return;
 
-        // Acción local inmediata para feedback visual
-        casilla.setRevelado(true);
-        botones[f][c].setEnabled(false);
-        botones[f][c].setBackground(Color.LIGHT_GRAY);
-
         if (casilla.isMina()) {
-            botones[f][c].setBackground(Color.RED);
-            botones[f][c].setText("X");
             enviarMensaje("PERDIO", null);
         } else {
-            if(casilla.getVecinos() > 0) {
-                botones[f][c].setText("" + casilla.getVecinos());
-                colorearNumero(botones[f][c], casilla.getVecinos());
-            }
             enviarMensaje("CLICK", f + "," + c);
         }
     }
     
     private void actualizarCasillaRemota(int f, int c, int vecinos) {
-        if(f >= 0 && f < botones.length && c >= 0 && c < botones[0].length) {
+        if(botones != null && f >= 0 && f < filas && c >= 0 && c < columnas) {
              botones[f][c].setEnabled(false);
-             botones[f][c].setBackground(Color.LIGHT_GRAY);
+             botones[f][c].setBackground(new Color(220, 220, 220));
+             
+             if (tableroLogico != null) tableroLogico.getCasilla(f, c).setRevelado(true);
+
              if(vecinos > 0) {
                  botones[f][c].setText(String.valueOf(vecinos));
                  colorearNumero(botones[f][c], vecinos);
@@ -396,17 +476,10 @@ public class Juego extends javax.swing.JPanel {
     private void colorearNumero(JButton btn, int n) {
         switch(n) {
             case 1: btn.setForeground(Color.BLUE); break;
-            case 2: btn.setForeground(new Color(0, 128, 0)); break; // Verde oscuro
+            case 2: btn.setForeground(new Color(0, 128, 0)); break;
             case 3: btn.setForeground(Color.RED); break;
-            default: btn.setForeground(new Color(0, 0, 128)); break;
+            default: btn.setForeground(Color.BLACK); break;
         }
-    }
-
-    private void bloquearBotonesSegunTurno() {
-        if (botones == null) return;
-        // Solo cambiamos la interactividad global del panel, no botón por botón para no afectar a los revelados
-        // Pero Swing JButton enabled es visual.
-        // La protección real está en clickCasilla: if (!esMiTurno) return;
     }
 
     private void enviarMensaje(String tipo, Object contenido) {
@@ -414,10 +487,10 @@ public class Juego extends javax.swing.JPanel {
             if (out != null) {
                 out.writeObject(new Mensaje(tipo, contenido));
                 out.flush();
-                out.reset(); // CRÍTICO
+                out.reset(); 
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Error envío: " + e.getMessage());
         }
     }
     
