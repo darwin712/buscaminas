@@ -8,6 +8,7 @@ import javax.swing.*;
 
 public class Juego extends javax.swing.JPanel {
     
+    // --- VARIABLES LÓGICAS ---
     private JButton[][] botones;
     private Tablero tableroLogico;
     private Socket socket;
@@ -19,20 +20,25 @@ public class Juego extends javax.swing.JPanel {
     private int filas = 10;
     private int columnas = 10;
     
-    // Cronómetro
+    // --- VARIABLES DE UI LÓGICA ---
     private Timer timerJuego;
     private int segundos = 0;
     
-    // Colores de estado (Turnos)
-    private final Color COLOR_MIO = new Color(46, 204, 113); // Verde
-    private final Color COLOR_RIVAL = new Color(231, 76, 60); // Rojo
+    // --- CONSTANTES DE COLOR ---
+    private final Color COLOR_MIO = new Color(46, 204, 113); // Verde (Tu turno)
+    private final Color COLOR_RIVAL = new Color(231, 76, 60); // Rojo (Rival)
+    private final Color COLOR_FONDO_TABLERO = new Color(255, 255, 255);
 
     public Juego() {
         initComponents();
     }
 
+    // =======================================================
+    // LÓGICA DEL JUEGO
+    // =======================================================
+
     public void iniciarJuego(Socket s, ObjectOutputStream o, ObjectInputStream i, String rival, String yo) {
-        if (running) return;
+        if (running) return; // Evitar doble inicio
         
         this.socket = s;
         this.out = o;
@@ -40,24 +46,27 @@ public class Juego extends javax.swing.JPanel {
         this.running = true;
         this.esMiTurno = false;
         
-        // Reset visual
+        // Resetear estado visual
         panelTablero1.removeAll();
         panelTablero1.setVisible(false);
-        jLabel2.setText("Conectando...");
+        
+        // Mensaje de estado inicial
+        jLabel2.setText("Sincronizando...");
         jLabel2.setOpaque(true);
         jLabel2.setBackground(Color.GRAY);
+        jLabel2.setForeground(Color.WHITE);
         
-        // Nombres
+        // Configurar Nombres en el Header
         jLabel5.setText(yo + " VS " + rival);
         jLabel5.setFont(new Font("Segoe UI", Font.BOLD, 32));
         
-        // Timer Reset
+        // Reiniciar Cronómetro
         if (timerJuego != null) timerJuego.stop();
         segundos = 0;
         jLabel4.setText("00:00");
         timerJuego = new Timer(1000, e -> actualizarReloj());
         
-        // Hilo de escucha
+        // Iniciar hilo de escucha
         new Thread(this::bucleEscucha).start();
     }
     
@@ -68,6 +77,7 @@ public class Juego extends javax.swing.JPanel {
         jLabel4.setText(String.format("%02d:%02d", min, sec));
     }
     
+    // --- HILO DE ESCUCHA ---
     private void bucleEscucha() {
         try {
             while (running && !socket.isClosed()) {
@@ -77,7 +87,7 @@ public class Juego extends javax.swing.JPanel {
         } catch (Exception e) {
             if (running) {
                 SwingUtilities.invokeLater(() -> {
-                    JOptionPane.showMessageDialog(this, "Conexión perdida.");
+                    JOptionPane.showMessageDialog(this, "Se perdió la conexión con el servidor.");
                     salirLimpiamente();
                 });
             }
@@ -86,17 +96,19 @@ public class Juego extends javax.swing.JPanel {
         }
     }
 
+    // --- PROCESADOR DE MENSAJES ---
     public void procesarMensaje(Mensaje msg) {
         if (!running) return;
 
         switch (msg.getTipo()) {
             case "VOTACION":
                 String[] op = {"8x8", "10x10", "12x12"};
-                int sel = JOptionPane.showOptionDialog(this, "¡Rival Encontrado!\nElige tamaño:", "Votación", 
-                        0, 3, null, op, op[1]);
+                int sel = JOptionPane.showOptionDialog(this, "¡Rival Encontrado!\nElige tamaño del mapa:", "Votación", 
+                        JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, op, op[1]);
                 String voto = (sel == 0) ? "8" : (sel == 2 ? "12" : "10");
                 enviar("ENVIAR_VOTO", voto);
-                jLabel2.setText("Esperando al rival...");
+                jLabel2.setText("Esperando rival...");
+                jLabel2.setBackground(Color.DARK_GRAY);
                 break;
 
             case "TAMANO":
@@ -109,14 +121,20 @@ public class Juego extends javax.swing.JPanel {
                 this.tableroLogico = (Tablero) msg.getContenido();
                 crearTableroVisual();
                 panelTablero1.setVisible(true);
-                timerJuego.start();
+                timerJuego.start(); // Inicia el tiempo
                 break;
                 
             case "TURNO":
                 esMiTurno = (boolean) msg.getContenido();
-                jLabel2.setText(esMiTurno ? " TU TURNO " : " TURNO RIVAL ");
-                jLabel2.setBackground(esMiTurno ? COLOR_MIO : COLOR_RIVAL);
-                jLabel2.setForeground(esMiTurno ? Color.BLACK : Color.WHITE);
+                if (esMiTurno) {
+                    jLabel2.setText(" ¡TU TURNO! ");
+                    jLabel2.setBackground(COLOR_MIO);
+                    jLabel2.setForeground(Color.BLACK);
+                } else {
+                    jLabel2.setText(" TURNO RIVAL ");
+                    jLabel2.setBackground(COLOR_RIVAL);
+                    jLabel2.setForeground(Color.WHITE);
+                }
                 break;
                 
             case "CASILLA_ACTUALIZADA":
@@ -125,6 +143,7 @@ public class Juego extends javax.swing.JPanel {
                 break;
                 
             case "MINAS":
+                // Pintar todas las minas al finalizar
                 String[] minas = ((String)msg.getContenido()).split(";");
                 for(String m : minas) {
                     if(!m.isEmpty()) {
@@ -132,10 +151,11 @@ public class Juego extends javax.swing.JPanel {
                         int f = Integer.parseInt(c[0]);
                         int col = Integer.parseInt(c[1]);
                         if(botones != null) {
-                             botones[f][col].setBackground(new Color(255, 80, 80)); // Rojo claro
+                             botones[f][col].setBackground(new Color(255, 80, 80)); // Rojo explosión
                              botones[f][col].setText("💣");
                              botones[f][col].setEnabled(false);
                              botones[f][col].setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
+                             botones[f][col].setBorder(BorderFactory.createLineBorder(Color.GRAY));
                         }
                     }
                 }
@@ -145,10 +165,17 @@ public class Juego extends javax.swing.JPanel {
             case "PERDISTE":
                 timerJuego.stop();
                 running = false;
-                int res = JOptionPane.showConfirmDialog(this, msg.getTipo() + "\n¿Jugar otra vez?", "Fin", JOptionPane.YES_NO_OPTION);
+                
+                int res = JOptionPane.showConfirmDialog(this, msg.getTipo() + "\n¿Jugar otra vez?", "Fin de Partida", JOptionPane.YES_NO_OPTION);
+                
+                // CERRAR SOCKET para que el menú cree uno nuevo
                 try { socket.close(); } catch(IOException e){}
+                
+                // Simular click en salir
                 btnRegresar.doClick();
+                
                 if (res == JOptionPane.YES_OPTION) {
+                    // Pedir al menú que reinicie el proceso
                     Container parent = getParent();
                     for(Component c : parent.getComponents()) {
                         if(c instanceof Menu) ((Menu)c).solicitarPartidaAutomatica();
@@ -158,13 +185,14 @@ public class Juego extends javax.swing.JPanel {
                 
             case "OPONENTE_DESCONECTADO":
                 timerJuego.stop();
-                JOptionPane.showMessageDialog(this, "El rival se ha desconectado.");
+                JOptionPane.showMessageDialog(this, "El rival se ha desconectado. Ganaste.");
                 try { socket.close(); } catch(IOException e){}
                 salirLimpiamente();
                 break;
         }
     }
 
+    // --- GENERACIÓN DE TABLERO ---
     private void crearTableroVisual() {
         panelTablero1.removeAll();
         panelTablero1.setLayout(new GridLayout(filas, columnas));
@@ -173,25 +201,29 @@ public class Juego extends javax.swing.JPanel {
         for (int i = 0; i < filas; i++) {
             for (int j = 0; j < columnas; j++) {
                 JButton btn = new JButton();
-                // ESTILO PLANO (FLAT)
+                
+                // ESTILO PLANO (FLAT DESIGN)
                 btn.setFocusable(false);
                 btn.setMargin(new Insets(0,0,0,0));
-                btn.setBackground(new Color(230, 230, 230));
-                btn.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+                btn.setBackground(new Color(230, 230, 230)); // Gris claro
+                btn.setBorder(BorderFactory.createLineBorder(Color.GRAY)); // Borde simple
                 btn.setFont(new Font("Arial", Font.BOLD, 14));
                 
                 final int f = i;
                 final int c = j;
                 
-                // Click Izquierdo (Jugar)
+                // CLICK IZQUIERDO (Revelar)
                 btn.addActionListener(e -> {
-                    if(esMiTurno && !tableroLogico.getCasilla(f, c).esRevelado() && !btn.getText().equals("🚩")) {
+                    // Si hay bandera, no hacer nada
+                    if (btn.getText().equals("🚩")) return;
+                    
+                    if(esMiTurno && !tableroLogico.getCasilla(f, c).esRevelado()) {
                         if(tableroLogico.getCasilla(f, c).isMina()) enviar("PERDIO", null);
                         else enviar("CLICK", f + "," + c);
                     }
                 });
                 
-                // Click Derecho (Bandera)
+                // CLICK DERECHO (Poner Bandera)
                 btn.addMouseListener(new MouseAdapter() {
                     public void mouseClicked(MouseEvent e) {
                         if (SwingUtilities.isRightMouseButton(e) && btn.isEnabled()) {
@@ -215,24 +247,26 @@ public class Juego extends javax.swing.JPanel {
         panelTablero1.repaint();
     }
     
+    // --- ACTUALIZACIÓN DE CELDAS ---
     private void actualizarVisual(int f, int c, int v) {
         if(botones == null) return;
         JButton btn = botones[f][c];
         
-        // Desactivar "lógicamente" pero mantener colores
+        // Quitar listeners para "desactivar" pero mantener colores vivos
         for(ActionListener al : btn.getActionListeners()) btn.removeActionListener(al);
         for(MouseListener ml : btn.getMouseListeners()) btn.removeMouseListener(ml);
         
-        btn.setBackground(new Color(220, 220, 220)); // Gris hundido
+        btn.setBackground(new Color(220, 220, 220)); // Color hundido
         btn.setText(""); 
         
         if(v > 0) {
             btn.setText(String.valueOf(v));
-            btn.setFont(new Font("Segoe UI Black", Font.BOLD, 16));
-            // COLORES ORIGINALES BUSCAMINAS
+            btn.setFont(new Font("Segoe UI Black", Font.BOLD, 16)); // Fuente gruesa
+            
+            // COLORES OFICIALES
             switch (v) {
                 case 1: btn.setForeground(Color.BLUE); break;
-                case 2: btn.setForeground(new Color(0, 128, 0)); break; // Verde
+                case 2: btn.setForeground(new Color(0, 128, 0)); break; // Verde oscuro
                 case 3: btn.setForeground(Color.RED); break;
                 case 4: btn.setForeground(new Color(0, 0, 128)); break; // Azul oscuro
                 case 5: btn.setForeground(new Color(128, 0, 0)); break; // Marrón
@@ -242,6 +276,24 @@ public class Juego extends javax.swing.JPanel {
             }
         }
         tableroLogico.getCasilla(f, c).setRevelado(true);
+    }
+
+    // --- TRUCO PARA DEMOSTRACIÓN ---
+    private void mostrarMinasDemo() {
+        if (tableroLogico == null || botones == null) return;
+        
+        for (int i = 0; i < filas; i++) {
+            for (int j = 0; j < columnas; j++) {
+                Casilla c = tableroLogico.getCasilla(i, j);
+                // Pinta minas de magenta si no han explotado
+                if (c.isMina() && botones[i][j].isEnabled()) {
+                    botones[i][j].setBackground(Color.MAGENTA);
+                    botones[i][j].setText("💣");
+                    botones[i][j].setForeground(Color.WHITE);
+                }
+            }
+        }
+        this.requestFocusInWindow();
     }
 
     private void enviar(String t, Object c) {
@@ -263,7 +315,9 @@ public class Juego extends javax.swing.JPanel {
         salirLimpiamente();
     }
 
-    // --- CÓDIGO GENERADO POR NETBEANS (COMPLETO) ---
+    // =======================================================
+    // CÓDIGO GENERADO POR NETBEANS (COMPLETO)
+    // =======================================================
     @SuppressWarnings("unchecked")
     private void initComponents() {
 
@@ -274,6 +328,9 @@ public class Juego extends javax.swing.JPanel {
         jLabel2 = new javax.swing.JLabel();
         jPanel4 = new javax.swing.JPanel();
         btnRegresar = new javax.swing.JButton();
+        // Botón Hack
+        btnMostrarMinas = new javax.swing.JButton();
+        
         jLabel6 = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
@@ -288,6 +345,7 @@ public class Juego extends javax.swing.JPanel {
         setBackground(new java.awt.Color(92, 103, 125));
         setLayout(new java.awt.BorderLayout());
 
+        // --- HEADER ---
         jPanel1.setBackground(new java.awt.Color(92, 103, 125));
 
         jLabel5.setFont(new java.awt.Font("Segoe UI", 3, 48)); // NOI18N
@@ -314,6 +372,7 @@ public class Juego extends javax.swing.JPanel {
 
         add(jPanel1, java.awt.BorderLayout.PAGE_START);
 
+        // --- PANEL IZQUIERDO ---
         jPanel3.setBackground(new java.awt.Color(92, 103, 125));
 
         jLabel1.setBackground(new java.awt.Color(51, 51, 51));
@@ -322,7 +381,7 @@ public class Juego extends javax.swing.JPanel {
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Estado");
 
-        jLabel2.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 16)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(255, 255, 255));
         jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel2.setText("Esperando...");
@@ -345,12 +404,13 @@ public class Juego extends javax.swing.JPanel {
                 .addGap(21, 21, 21)
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel2)
+                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(493, Short.MAX_VALUE))
         );
 
         add(jPanel3, java.awt.BorderLayout.LINE_START);
 
+        // --- PANEL DERECHO (TOOLS) ---
         jPanel4.setBackground(new java.awt.Color(92, 103, 125));
 
         btnRegresar.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
@@ -361,6 +421,13 @@ public class Juego extends javax.swing.JPanel {
                 btnRegresarActionPerformed(evt);
             }
         });
+        
+        // Configuración Visual Botón Mostrar Minas
+        btnMostrarMinas.setFont(new java.awt.Font("Segoe UI", 1, 12));
+        btnMostrarMinas.setText("Mostrar Minas");
+        btnMostrarMinas.setBackground(new java.awt.Color(255, 200, 0)); // Naranja
+        btnMostrarMinas.setForeground(Color.BLACK);
+        btnMostrarMinas.addActionListener(e -> mostrarMinasDemo());
 
         jLabel6.setBackground(new java.awt.Color(51, 51, 51));
         jLabel6.setFont(new java.awt.Font("Segoe UI", 2, 24)); // NOI18N
@@ -379,7 +446,9 @@ public class Juego extends javax.swing.JPanel {
                         .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 185, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addContainerGap())
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
-                        .addComponent(btnRegresar, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(btnRegresar, javax.swing.GroupLayout.DEFAULT_SIZE, 123, Short.MAX_VALUE)
+                            .addComponent(btnMostrarMinas, javax.swing.GroupLayout.DEFAULT_SIZE, 123, Short.MAX_VALUE))
                         .addGap(36, 36, 36))))
         );
         jPanel4Layout.setVerticalGroup(
@@ -388,12 +457,15 @@ public class Juego extends javax.swing.JPanel {
                 .addGap(33, 33, 33)
                 .addComponent(jLabel6)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btnRegresar, javax.swing.GroupLayout.PREFERRED_SIZE, 113, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(btnRegresar, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(btnMostrarMinas, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(388, Short.MAX_VALUE))
         );
 
         add(jPanel4, java.awt.BorderLayout.LINE_END);
 
+        // --- FOOTER ---
         jPanel2.setBackground(new java.awt.Color(92, 103, 125));
 
         jLabel3.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
@@ -427,6 +499,7 @@ public class Juego extends javax.swing.JPanel {
 
         add(jPanel2, java.awt.BorderLayout.PAGE_END);
 
+        // --- CENTRO (TABLERO) ---
         jPanel5.setBackground(new java.awt.Color(92, 103, 125));
         jPanel5.setLayout(new java.awt.BorderLayout());
 
@@ -493,8 +566,9 @@ public class Juego extends javax.swing.JPanel {
         add(jPanel5, java.awt.BorderLayout.CENTER);
     }
 
-    // Variables declaration - do not modify                     
+    // Variables declaration - do not modify
     private javax.swing.JButton btnRegresar;
+    private javax.swing.JButton btnMostrarMinas; // Botón Nuevo
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -511,5 +585,5 @@ public class Juego extends javax.swing.JPanel {
     private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel7;
     private javax.swing.JPanel panelTablero1;
-    // End of variables declaration                   
+    // End of variables declaration
 }
