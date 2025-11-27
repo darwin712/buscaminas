@@ -2,6 +2,7 @@ package proyectobuscaminas;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.util.Random;
 import java.io.*;
 import java.net.*;
 import javax.swing.*;
@@ -14,6 +15,7 @@ public class Juego extends javax.swing.JPanel {
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
+    private Random random = new Random();
     
     private boolean esMiTurno = false;
     private volatile boolean running = false;
@@ -39,6 +41,9 @@ public class Juego extends javax.swing.JPanel {
 
     public void iniciarJuego(Socket s, ObjectOutputStream o, ObjectInputStream i, String rival, String yo) {
         if (running) return; // Evitar doble inicio
+        if(Musica.getInstance().isPlaying() == true && Musica.getInstance().wasPlayedOnce() == true){
+            elegirMusica();
+        }
         
         this.socket = s;
         this.out = o;
@@ -218,14 +223,20 @@ public class Juego extends javax.swing.JPanel {
                     if (btn.getText().equals("🚩")) return;
                     
                     if(esMiTurno && !tableroLogico.getCasilla(f, c).esRevelado()) {
-                        if(tableroLogico.getCasilla(f, c).isMina()) enviar("PERDIO", null);
-                        else enviar("CLICK", f + "," + c);
+                        if(tableroLogico.getCasilla(f, c).isMina()){
+                            enviar("PERDIO", null);
+                            Musica.getInstance().playSFX("recursos/Bomb.ogg");
+                        }else{
+                            enviar("CLICK", f + "," + c);
+                            Musica.getInstance().playSFX("recursos/Click2.ogg");
+                        }
                     }
                 });
                 
                 // CLICK DERECHO (Poner Bandera)
                 btn.addMouseListener(new MouseAdapter() {
                     public void mouseClicked(MouseEvent e) {
+                        Musica.getInstance().playSFX("recursos/Flag.ogg");
                         if (SwingUtilities.isRightMouseButton(e) && btn.isEnabled()) {
                             if (btn.getText().equals("🚩")) {
                                 btn.setText("");
@@ -307,12 +318,59 @@ public class Juego extends javax.swing.JPanel {
     private void salirLimpiamente() {
         running = false;
         CardLayout cl = (CardLayout) getParent().getLayout();
+        if(Musica.getInstance().isPlaying() == true){
+            Musica.getInstance().stopMusic();
+            Musica.getInstance().playMusic("recursos/MainTheme.ogg");
+        }
         cl.show(getParent(), "menu");
     }
     
     private void btnRegresarActionPerformed(java.awt.event.ActionEvent evt) {
         try { socket.close(); } catch(IOException e){}
         salirLimpiamente();
+    }
+    
+    private void elegirMusica(){
+        // Número de canciones
+        int canciones = 6;
+
+        // Elegir un índice aleatorio
+        int opcion = random.nextInt(canciones);
+
+        switch(opcion){
+            case 0:
+                Musica.getInstance().stopMusic();
+                Musica.getInstance().playMusic("recursos/ChaozFantasy.ogg");
+                break;
+
+            case 1:
+                Musica.getInstance().stopMusic();
+                Musica.getInstance().playMusic("recursos/Roblox.ogg");
+                break;
+                
+            case 2:
+                Musica.getInstance().stopMusic();
+                Musica.getInstance().playMusic("recursos/FireAura.ogg");
+                break;
+                
+            case 3:
+                Musica.getInstance().stopMusic();
+                Musica.getInstance().playMusic("recursos/MyHeart.ogg");
+                break;
+                
+            case 4:
+                Musica.getInstance().stopMusic();
+                Musica.getInstance().playMusic("recursos/Stardust.ogg");
+                break;
+                
+            case 5:
+                Musica.getInstance().stopMusic();
+                Musica.getInstance().playMusic("recursos/FireEmblem.ogg");
+                break;
+
+            default:
+                System.out.println("Error inesperado");
+        }
     }
 
     // =======================================================

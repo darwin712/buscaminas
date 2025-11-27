@@ -33,7 +33,7 @@ public class Ventana extends javax.swing.JFrame {
         card.show(jPanel1, "menu");
         
         if(Musica.getInstance().isPlaying() == false && Musica.getInstance().wasPlayedOnce() == false){
-            Musica.getInstance().playMusic("recursos/Tobu-Infectious.ogg");
+            Musica.getInstance().playMusic("recursos/MainTheme.ogg");
             Musica.getInstance().setWasPlayedOnce(true);
         }
     }

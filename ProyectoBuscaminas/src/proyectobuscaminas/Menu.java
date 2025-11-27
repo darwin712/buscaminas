@@ -17,11 +17,13 @@ public class Menu extends Fondo {
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
+    private volatile boolean buscandoPartida = false;
 
     // Componentes de Carga
     private JPanel glassPanel;
     private JLabel lblEstado;
     private Timer timerAnimacion;
+    private JButton btnCancelar;
 
     public Menu() {
         super("/proyectobuscaminas/imagenes/abstractbg.jpg");
@@ -37,6 +39,7 @@ public class Menu extends Fondo {
 
         if (Musica.getInstance().isPlaying()) btnMusic.setText("ON");
         else btnMusic.setText("OFF");
+        
     }
 
     // --- 1. PANTALLA DE CARGA (GLASS PANE) ---
@@ -73,6 +76,7 @@ public class Menu extends Fondo {
             else lblEstado.setText(txt + ".");
         });
     }
+
 
     private void mostrarCarga(boolean mostrar, String texto) {
         JRootPane root = SwingUtilities.getRootPane(this);
@@ -120,6 +124,8 @@ public class Menu extends Fondo {
 
     // --- 3. BOTÓN JUGAR ---
     private void btnJugarActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        Musica.getInstance().playSFX("recursos/Click2.ogg");
+        buscandoPartida = true;
         if (!asegurarConexion()) return;
         
         if (!isLogueado) {
@@ -177,7 +183,8 @@ public class Menu extends Fondo {
     }
 
     // --- OTROS BOTONES ---
-    private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {                                         
+    private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {  
+        Musica.getInstance().playSFX("recursos/Click2.ogg");
         if (!asegurarConexion()) return;
 
         JTextField u = new JTextField();
@@ -201,7 +208,8 @@ public class Menu extends Fondo {
         }
     }                                        
 
-    private void btnRegistroActionPerformed(java.awt.event.ActionEvent evt) {                                            
+    private void btnRegistroActionPerformed(java.awt.event.ActionEvent evt) { 
+        Musica.getInstance().playSFX("recursos/Click2.ogg");
         if (!asegurarConexion()) return;
         JTextField u = new JTextField();
         JPasswordField p = new JPasswordField();
@@ -215,7 +223,8 @@ public class Menu extends Fondo {
         }
     }                                           
 
-    private void btnRecordsActionPerformed(java.awt.event.ActionEvent evt) {                                           
+    private void btnRecordsActionPerformed(java.awt.event.ActionEvent evt) {  
+        Musica.getInstance().playSFX("recursos/Click2.ogg");
         if (!asegurarConexion()) return;
         if (!isLogueado) { JOptionPane.showMessageDialog(this, "Inicia sesión para ver tus records."); return; }
         
@@ -234,12 +243,13 @@ public class Menu extends Fondo {
         }).start();
     }                                          
 
-    private void btnMusicActionPerformed(java.awt.event.ActionEvent evt) {                                         
+    private void btnMusicActionPerformed(java.awt.event.ActionEvent evt) { 
+        Musica.getInstance().playSFX("recursos/Click2.ogg");
         if(Musica.getInstance().isPlaying()){
             Musica.getInstance().stopMusic();
             btnMusic.setText("OFF");
         } else {
-            Musica.getInstance().playMusic("recursos/Tobu-Infectious.ogg");
+            Musica.getInstance().playMusic("recursos/MainTheme.ogg");
             btnMusic.setText("ON");
         }
     }                                        
