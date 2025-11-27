@@ -1,6 +1,7 @@
-package proyectobuscaminas;
+package proyectobuscaminas.Servidor;
 
 import java.util.Random;
+import proyectobuscaminas.Tablero.Tablero;
 
 public class GeneradorTableros {
 

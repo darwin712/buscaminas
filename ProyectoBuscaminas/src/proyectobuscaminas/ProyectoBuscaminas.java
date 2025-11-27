@@ -3,6 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package proyectobuscaminas;
+import proyectobuscaminas.Comunes.Ventana;
 import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.SwingUtilities;
 /**

@@ -2,7 +2,8 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package proyectobuscaminas;
+package proyectobuscaminas.Tablero;
+
 
 import java.io.Serializable;
 
@@ -82,4 +83,10 @@ public class Tablero implements Serializable{
 
     public int getFilas() { return filas; }
     public int getColumnas() { return columnas; }
+
+    public static class GeneradorTableros {
+
+        public GeneradorTableros() {
+        }
+    }
 }

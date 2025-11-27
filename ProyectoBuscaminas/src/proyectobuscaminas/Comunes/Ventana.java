@@ -2,8 +2,11 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
-package proyectobuscaminas;
+package proyectobuscaminas.Comunes;
 
+import proyectobuscaminas.Comunes.Musica;
+import proyectobuscaminas.Cliente.Menu;
+import proyectobuscaminas.Cliente.Juego;
 import java.awt.CardLayout;
 import javax.swing.JFrame;
 

@@ -1,0 +1,14 @@
+[26/11 22:24] 1 venció a 2 (Tablero 12) - 00:03|partida_2_vs_1_20251126_222426.log
+[26/11 22:25] 1 venció a 2 (Tablero 12) - 00:11|partida_1_vs_2_20251126_222517.log
+[26/11 22:52] 2 venció a 1 (Tablero 12) - 00:02|partida_1_vs_2_20251126_225102.log
+[26/11 23:00] 1 venció a 2 (Tablero 12) - 00:13|partida_2_vs_1_20251126_225952.log
+[26/11 23:00] 1 venció a 2 (Tablero 10) - 00:04|partida_2_vs_1_20251126_230024.log
+[26/11 23:15] 2 venció a 1 (Tablero 12) - 00:20|partida_1_vs_2_20251126_231508.log
+[26/11 23:18] 1 venció a PepePapas1 (Tablero 12) - 00:02|partida_PepePapas1_vs_1_20251126_231801.log
+[26/11 23:19] PepePapas1 venció a Juan Perez (Tablero 12) - 00:10|partida_PepePapas1_vs_Juan Perez_20251126_231901.log
+[26/11 23:48] 1 venció a 2 (Tablero 12) - 00:00|partida_2_vs_1_20251126_234833.log
+[26/11 23:56] 2 venció a 1 (Tablero 12) - 00:02|partida_2_vs_1_20251126_235557.log
+[27/11 00:03] 2 venció a 1 (Tablero 12) - 00:14|partida_1_vs_2_20251127_000335.log
+[27/11 00:04] 2 venció a 1 (Tablero 12) - 00:00|partida_1_vs_2_20251127_000400.log
+[27/11 00:04] 1 venció a 4 (Tablero 12) - 00:11|partida_1_vs_4_20251127_000425.log
+[27/11 00:06] PepePapas1 venció a 1 (Tablero 12) - 00:08|partida_1_vs_PepePapas1_20251127_000547.log

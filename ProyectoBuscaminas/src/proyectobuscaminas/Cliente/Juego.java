@@ -1,77 +1,133 @@
-package proyectobuscaminas;
+package proyectobuscaminas.Cliente;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Random;
 import java.io.*;
 import java.net.*;
+import java.util.Random;
 import javax.swing.*;
+import proyectobuscaminas.Comunes.Mensaje;
+import proyectobuscaminas.Comunes.Musica;
+import proyectobuscaminas.Tablero.Casilla;
+import proyectobuscaminas.Tablero.Tablero;
 
 public class Juego extends javax.swing.JPanel {
     
-    // --- VARIABLES LÓGICAS ---
+
     private JButton[][] botones;
     private Tablero tableroLogico;
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
-    private Random random = new Random();
     
     private boolean esMiTurno = false;
     private volatile boolean running = false;
     private int filas = 10;
     private int columnas = 10;
-    
-    // --- VARIABLES DE UI LÓGICA ---
+
     private Timer timerJuego;
     private int segundos = 0;
+    private boolean minasVisibles = false; // Estado del truco
     
-    // --- CONSTANTES DE COLOR ---
-    private final Color COLOR_MIO = new Color(46, 204, 113); // Verde (Tu turno)
-    private final Color COLOR_RIVAL = new Color(231, 76, 60); // Rojo (Rival)
-    private final Color COLOR_FONDO_TABLERO = new Color(255, 255, 255);
 
+    private final Color COLOR_MIO = new Color(46, 204, 113); // Verde
+    private final Color COLOR_RIVAL = new Color(231, 76, 60); // Rojo
+    
     public Juego() {
         initComponents();
     }
 
-    // =======================================================
-    // LÓGICA DEL JUEGO
-    // =======================================================
+    // --- LÓGICA DE MÚSICA ALEATORIA (Tu código) ---
+    private void ponerMusicaAleatoria() {
+        Random random = new Random();
+        int canciones = 6;
+        int opcion = random.nextInt(canciones);
 
-    public void iniciarJuego(Socket s, ObjectOutputStream o, ObjectInputStream i, String rival, String yo) {
-        if (running) return; // Evitar doble inicio
-        if(Musica.getInstance().isPlaying() == true && Musica.getInstance().wasPlayedOnce() == true){
-            elegirMusica();
+        // Detener música del menú antes de empezar
+        Musica.getInstance().stopMusic();
+
+        switch(opcion){
+            case 0: Musica.getInstance().playMusic("recursos/ChaozFantasy.ogg"); break;
+            case 1: Musica.getInstance().playMusic("recursos/Roblox.ogg"); break;
+            case 2: Musica.getInstance().playMusic("recursos/FireAura.ogg"); break;
+            case 3: Musica.getInstance().playMusic("recursos/MyHeart.ogg"); break;
+            case 4: Musica.getInstance().playMusic("recursos/Stardust.ogg"); break;
+            case 5: Musica.getInstance().playMusic("recursos/FireEmblem.ogg"); break;
+            default: System.out.println("Error inesperado en música");
         }
+    }
+
+    // --- TRUCO MOSTRAR/OCULTAR MINAS ---
+    private void toggleMinasDemo() {
+        if (tableroLogico == null || botones == null) return;
+        
+        minasVisibles = !minasVisibles; // Alternar estado
+        
+        // Cambiar texto del botón
+        if(minasVisibles) {
+            btnMostrarMinas.setText("Ocultar Minas");
+            btnMostrarMinas.setBackground(new Color(255, 100, 100));
+        } else {
+            btnMostrarMinas.setText("Mostrar Minas");
+            btnMostrarMinas.setBackground(Color.ORANGE);
+        }
+        
+        for (int i = 0; i < filas; i++) {
+            for (int j = 0; j < columnas; j++) {
+                Casilla c = tableroLogico.getCasilla(i, j);
+                // Solo afectamos casillas no reveladas que sean minas
+                if (c.isMina() && botones[i][j].isEnabled()) {
+                    if(minasVisibles) {
+                        botones[i][j].setBackground(Color.MAGENTA);
+                        botones[i][j].setText("💣");
+                        botones[i][j].setForeground(Color.WHITE);
+                    } else {
+                        // Restaurar apariencia normal
+                        botones[i][j].setBackground(new Color(230, 230, 230));
+                        botones[i][j].setText("");
+                        botones[i][j].setForeground(Color.BLACK);
+                    }
+                }
+            }
+        }
+        this.requestFocusInWindow();
+    }
+
+    // --- INICIO DEL JUEGO ---
+    public void iniciarJuego(Socket s, ObjectOutputStream o, ObjectInputStream i, String rival, String yo) {
+        if (running) return;
         
         this.socket = s;
         this.out = o;
         this.in = i;
         this.running = true;
         this.esMiTurno = false;
+        this.minasVisibles = false;
         
-        // Resetear estado visual
+        // Reset botón truco
+        btnMostrarMinas.setText("Mostrar Minas");
+        btnMostrarMinas.setBackground(Color.ORANGE);
+        
+        // Música
+        ponerMusicaAleatoria();
+        
+        // UI Reset
         panelTablero1.removeAll();
         panelTablero1.setVisible(false);
         
-        // Mensaje de estado inicial
-        jLabel2.setText("Sincronizando...");
+        jLabel2.setText("Conectando...");
         jLabel2.setOpaque(true);
         jLabel2.setBackground(Color.GRAY);
         jLabel2.setForeground(Color.WHITE);
         
-        // Configurar Nombres en el Header
         jLabel5.setText(yo + " VS " + rival);
-        jLabel5.setFont(new Font("Segoe UI", Font.BOLD, 32));
         
-        // Reiniciar Cronómetro
+        // Timer
         if (timerJuego != null) timerJuego.stop();
         segundos = 0;
         jLabel4.setText("00:00");
         timerJuego = new Timer(1000, e -> actualizarReloj());
         
-        // Iniciar hilo de escucha
         new Thread(this::bucleEscucha).start();
     }
     
@@ -82,7 +138,6 @@ public class Juego extends javax.swing.JPanel {
         jLabel4.setText(String.format("%02d:%02d", min, sec));
     }
     
-    // --- HILO DE ESCUCHA ---
     private void bucleEscucha() {
         try {
             while (running && !socket.isClosed()) {
@@ -92,7 +147,7 @@ public class Juego extends javax.swing.JPanel {
         } catch (Exception e) {
             if (running) {
                 SwingUtilities.invokeLater(() -> {
-                    JOptionPane.showMessageDialog(this, "Se perdió la conexión con el servidor.");
+                    JOptionPane.showMessageDialog(this, "Conexión perdida.");
                     salirLimpiamente();
                 });
             }
@@ -101,18 +156,24 @@ public class Juego extends javax.swing.JPanel {
         }
     }
 
-    // --- PROCESADOR DE MENSAJES ---
     public void procesarMensaje(Mensaje msg) {
         if (!running) return;
 
         switch (msg.getTipo()) {
             case "VOTACION":
-                String[] op = {"8x8", "10x10", "12x12"};
-                int sel = JOptionPane.showOptionDialog(this, "¡Rival Encontrado!\nElige tamaño del mapa:", "Votación", 
-                        JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, op, op[1]);
-                String voto = (sel == 0) ? "8" : (sel == 2 ? "12" : "10");
+                Object[] opciones = {"Principiante (8x8)", "Normal (10x10)", "Experto (12x12)"};
+                JLabel lbl = new JLabel("<html><h3>¡Rival Encontrado!</h3>Selecciona dificultad:</html>");
+                lbl.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+                
+                int sel = JOptionPane.showOptionDialog(this, lbl, "Votación", 
+                        JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, opciones, opciones[1]);
+
+                String voto = "10";
+                if (sel == 0) voto = "8";
+                if (sel == 2) voto = "12";
+
                 enviar("ENVIAR_VOTO", voto);
-                jLabel2.setText("Esperando rival...");
+                jLabel2.setText("Esperando al rival...");
                 jLabel2.setBackground(Color.DARK_GRAY);
                 break;
 
@@ -126,13 +187,13 @@ public class Juego extends javax.swing.JPanel {
                 this.tableroLogico = (Tablero) msg.getContenido();
                 crearTableroVisual();
                 panelTablero1.setVisible(true);
-                timerJuego.start(); // Inicia el tiempo
+                timerJuego.start();
                 break;
                 
             case "TURNO":
                 esMiTurno = (boolean) msg.getContenido();
                 if (esMiTurno) {
-                    jLabel2.setText(" ¡TU TURNO! ");
+                    jLabel2.setText(" TU TURNO ");
                     jLabel2.setBackground(COLOR_MIO);
                     jLabel2.setForeground(Color.BLACK);
                 } else {
@@ -148,7 +209,6 @@ public class Juego extends javax.swing.JPanel {
                 break;
                 
             case "MINAS":
-                // Pintar todas las minas al finalizar
                 String[] minas = ((String)msg.getContenido()).split(";");
                 for(String m : minas) {
                     if(!m.isEmpty()) {
@@ -156,7 +216,7 @@ public class Juego extends javax.swing.JPanel {
                         int f = Integer.parseInt(c[0]);
                         int col = Integer.parseInt(c[1]);
                         if(botones != null) {
-                             botones[f][col].setBackground(new Color(255, 80, 80)); // Rojo explosión
+                             botones[f][col].setBackground(new Color(255, 80, 80));
                              botones[f][col].setText("💣");
                              botones[f][col].setEnabled(false);
                              botones[f][col].setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
@@ -171,16 +231,15 @@ public class Juego extends javax.swing.JPanel {
                 timerJuego.stop();
                 running = false;
                 
-                int res = JOptionPane.showConfirmDialog(this, msg.getTipo() + "\n¿Jugar otra vez?", "Fin de Partida", JOptionPane.YES_NO_OPTION);
+                String titulo = msg.getTipo().equals("GANASTE") ? "¡VICTORIA!" : "DERROTA";
+                int r = JOptionPane.showConfirmDialog(this, 
+                        "<html><h2>" + titulo + "</h2><br>¿Jugar otra vez?</html>", 
+                        "Fin de Partida", JOptionPane.YES_NO_OPTION);
                 
-                // CERRAR SOCKET para que el menú cree uno nuevo
                 try { socket.close(); } catch(IOException e){}
-                
-                // Simular click en salir
                 btnRegresar.doClick();
                 
-                if (res == JOptionPane.YES_OPTION) {
-                    // Pedir al menú que reinicie el proceso
+                if (r == JOptionPane.YES_OPTION) {
                     Container parent = getParent();
                     for(Component c : parent.getComponents()) {
                         if(c instanceof Menu) ((Menu)c).solicitarPartidaAutomatica();
@@ -190,14 +249,13 @@ public class Juego extends javax.swing.JPanel {
                 
             case "OPONENTE_DESCONECTADO":
                 timerJuego.stop();
-                JOptionPane.showMessageDialog(this, "El rival se ha desconectado. Ganaste.");
+                JOptionPane.showMessageDialog(this, "El rival se ha desconectado. ¡Ganaste!");
                 try { socket.close(); } catch(IOException e){}
                 salirLimpiamente();
                 break;
         }
     }
 
-    // --- GENERACIÓN DE TABLERO ---
     private void crearTableroVisual() {
         panelTablero1.removeAll();
         panelTablero1.setLayout(new GridLayout(filas, columnas));
@@ -206,38 +264,30 @@ public class Juego extends javax.swing.JPanel {
         for (int i = 0; i < filas; i++) {
             for (int j = 0; j < columnas; j++) {
                 JButton btn = new JButton();
-                
-                // ESTILO PLANO (FLAT DESIGN)
+                // ESTILO PLANO
                 btn.setFocusable(false);
                 btn.setMargin(new Insets(0,0,0,0));
-                btn.setBackground(new Color(230, 230, 230)); // Gris claro
-                btn.setBorder(BorderFactory.createLineBorder(Color.GRAY)); // Borde simple
+                btn.setBackground(new Color(230, 230, 230));
+                btn.setBorder(BorderFactory.createLineBorder(Color.GRAY));
                 btn.setFont(new Font("Arial", Font.BOLD, 14));
                 
                 final int f = i;
                 final int c = j;
                 
-                // CLICK IZQUIERDO (Revelar)
                 btn.addActionListener(e -> {
-                    // Si hay bandera, no hacer nada
                     if (btn.getText().equals("🚩")) return;
-                    
                     if(esMiTurno && !tableroLogico.getCasilla(f, c).esRevelado()) {
-                        if(tableroLogico.getCasilla(f, c).isMina()){
-                            enviar("PERDIO", null);
-                            Musica.getInstance().playSFX("recursos/Bomb.ogg");
-                        }else{
-                            enviar("CLICK", f + "," + c);
-                            Musica.getInstance().playSFX("recursos/Click2.ogg");
-                        }
+                        if(tableroLogico.getCasilla(f, c).isMina()) enviar("PERDIO", null);
+                        else enviar("CLICK", f + "," + c);
                     }
                 });
                 
-                // CLICK DERECHO (Poner Bandera)
                 btn.addMouseListener(new MouseAdapter() {
                     public void mouseClicked(MouseEvent e) {
-                        Musica.getInstance().playSFX("recursos/Flag.ogg");
                         if (SwingUtilities.isRightMouseButton(e) && btn.isEnabled()) {
+                            // Si las minas están visibles por el truco, no poner banderas
+                            if(minasVisibles && btn.getText().equals("💣")) return;
+
                             if (btn.getText().equals("🚩")) {
                                 btn.setText("");
                                 btn.setForeground(Color.BLACK);
@@ -258,53 +308,32 @@ public class Juego extends javax.swing.JPanel {
         panelTablero1.repaint();
     }
     
-    // --- ACTUALIZACIÓN DE CELDAS ---
     private void actualizarVisual(int f, int c, int v) {
         if(botones == null) return;
         JButton btn = botones[f][c];
         
-        // Quitar listeners para "desactivar" pero mantener colores vivos
         for(ActionListener al : btn.getActionListeners()) btn.removeActionListener(al);
         for(MouseListener ml : btn.getMouseListeners()) btn.removeMouseListener(ml);
         
-        btn.setBackground(new Color(220, 220, 220)); // Color hundido
+        btn.setBackground(new Color(220, 220, 220));
         btn.setText(""); 
         
         if(v > 0) {
             btn.setText(String.valueOf(v));
-            btn.setFont(new Font("Segoe UI Black", Font.BOLD, 16)); // Fuente gruesa
-            
+            btn.setFont(new Font("Segoe UI Black", Font.BOLD, 16));
             // COLORES OFICIALES
             switch (v) {
                 case 1: btn.setForeground(Color.BLUE); break;
-                case 2: btn.setForeground(new Color(0, 128, 0)); break; // Verde oscuro
+                case 2: btn.setForeground(new Color(0, 128, 0)); break;
                 case 3: btn.setForeground(Color.RED); break;
-                case 4: btn.setForeground(new Color(0, 0, 128)); break; // Azul oscuro
-                case 5: btn.setForeground(new Color(128, 0, 0)); break; // Marrón
-                case 6: btn.setForeground(new Color(0, 128, 128)); break; // Cyan
+                case 4: btn.setForeground(new Color(0, 0, 128)); break;
+                case 5: btn.setForeground(new Color(128, 0, 0)); break;
+                case 6: btn.setForeground(new Color(0, 128, 128)); break;
                 case 7: btn.setForeground(Color.BLACK); break;
                 case 8: btn.setForeground(Color.GRAY); break;
             }
         }
         tableroLogico.getCasilla(f, c).setRevelado(true);
-    }
-
-    // --- TRUCO PARA DEMOSTRACIÓN ---
-    private void mostrarMinasDemo() {
-        if (tableroLogico == null || botones == null) return;
-        
-        for (int i = 0; i < filas; i++) {
-            for (int j = 0; j < columnas; j++) {
-                Casilla c = tableroLogico.getCasilla(i, j);
-                // Pinta minas de magenta si no han explotado
-                if (c.isMina() && botones[i][j].isEnabled()) {
-                    botones[i][j].setBackground(Color.MAGENTA);
-                    botones[i][j].setText("💣");
-                    botones[i][j].setForeground(Color.WHITE);
-                }
-            }
-        }
-        this.requestFocusInWindow();
     }
 
     private void enviar(String t, Object c) {
@@ -317,11 +346,9 @@ public class Juego extends javax.swing.JPanel {
     
     private void salirLimpiamente() {
         running = false;
+        Musica.getInstance().stopMusic();
+        Musica.getInstance().playMusic("recursos/MainTheme.ogg"); // Música de menú
         CardLayout cl = (CardLayout) getParent().getLayout();
-        if(Musica.getInstance().isPlaying() == true){
-            Musica.getInstance().stopMusic();
-            Musica.getInstance().playMusic("recursos/MainTheme.ogg");
-        }
         cl.show(getParent(), "menu");
     }
     
@@ -329,53 +356,8 @@ public class Juego extends javax.swing.JPanel {
         try { socket.close(); } catch(IOException e){}
         salirLimpiamente();
     }
-    
-    private void elegirMusica(){
-        // Número de canciones
-        int canciones = 6;
 
-        // Elegir un índice aleatorio
-        int opcion = random.nextInt(canciones);
-
-        switch(opcion){
-            case 0:
-                Musica.getInstance().stopMusic();
-                Musica.getInstance().playMusic("recursos/ChaozFantasy.ogg");
-                break;
-
-            case 1:
-                Musica.getInstance().stopMusic();
-                Musica.getInstance().playMusic("recursos/Roblox.ogg");
-                break;
-                
-            case 2:
-                Musica.getInstance().stopMusic();
-                Musica.getInstance().playMusic("recursos/FireAura.ogg");
-                break;
-                
-            case 3:
-                Musica.getInstance().stopMusic();
-                Musica.getInstance().playMusic("recursos/MyHeart.ogg");
-                break;
-                
-            case 4:
-                Musica.getInstance().stopMusic();
-                Musica.getInstance().playMusic("recursos/Stardust.ogg");
-                break;
-                
-            case 5:
-                Musica.getInstance().stopMusic();
-                Musica.getInstance().playMusic("recursos/FireEmblem.ogg");
-                break;
-
-            default:
-                System.out.println("Error inesperado");
-        }
-    }
-
-    // =======================================================
-    // CÓDIGO GENERADO POR NETBEANS (COMPLETO)
-    // =======================================================
+    // --- DISEÑO ORIGINAL RESTAURADO + BOTÓN HACK ---
     @SuppressWarnings("unchecked")
     private void initComponents() {
 
@@ -384,12 +366,12 @@ public class Juego extends javax.swing.JPanel {
         jPanel3 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
+        
         jPanel4 = new javax.swing.JPanel();
         btnRegresar = new javax.swing.JButton();
-        // Botón Hack
-        btnMostrarMinas = new javax.swing.JButton();
-        
+        btnMostrarMinas = new javax.swing.JButton(); // Nuevo
         jLabel6 = new javax.swing.JLabel();
+        
         jPanel2 = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
@@ -403,10 +385,8 @@ public class Juego extends javax.swing.JPanel {
         setBackground(new java.awt.Color(92, 103, 125));
         setLayout(new java.awt.BorderLayout());
 
-        // --- HEADER ---
         jPanel1.setBackground(new java.awt.Color(92, 103, 125));
-
-        jLabel5.setFont(new java.awt.Font("Segoe UI", 3, 48)); // NOI18N
+        jLabel5.setFont(new java.awt.Font("Segoe UI", 3, 48)); 
         jLabel5.setForeground(new java.awt.Color(255, 255, 255));
         jLabel5.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         jLabel5.setText("Buscaminas");
@@ -427,19 +407,16 @@ public class Juego extends javax.swing.JPanel {
                 .addComponent(jLabel5)
                 .addContainerGap(22, Short.MAX_VALUE))
         );
-
         add(jPanel1, java.awt.BorderLayout.PAGE_START);
 
-        // --- PANEL IZQUIERDO ---
         jPanel3.setBackground(new java.awt.Color(92, 103, 125));
-
         jLabel1.setBackground(new java.awt.Color(51, 51, 51));
-        jLabel1.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
+        jLabel1.setFont(new java.awt.Font("Segoe UI", 0, 24)); 
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Estado");
 
-        jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 16)); // NOI18N
+        jLabel2.setFont(new java.awt.Font("Segoe UI", 0, 14)); 
         jLabel2.setForeground(new java.awt.Color(255, 255, 255));
         jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel2.setText("Esperando...");
@@ -462,33 +439,28 @@ public class Juego extends javax.swing.JPanel {
                 .addGap(21, 21, 21)
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jLabel2)
                 .addContainerGap(493, Short.MAX_VALUE))
         );
-
         add(jPanel3, java.awt.BorderLayout.LINE_START);
 
-        // --- PANEL DERECHO (TOOLS) ---
+        // --- PANEL DERECHO CON TUS BOTONES ---
         jPanel4.setBackground(new java.awt.Color(92, 103, 125));
 
-        btnRegresar.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btnRegresar.setFont(new java.awt.Font("Segoe UI", 1, 14)); 
         btnRegresar.setText("Salir");
-        btnRegresar.setActionCommand("");
-        btnRegresar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnRegresarActionPerformed(evt);
-            }
-        });
-        
-        // Configuración Visual Botón Mostrar Minas
+        btnRegresar.setBackground(new Color(231, 76, 60)); 
+        btnRegresar.setForeground(Color.WHITE);
+        btnRegresar.addActionListener(e -> btnRegresarActionPerformed(e));
+
         btnMostrarMinas.setFont(new java.awt.Font("Segoe UI", 1, 12));
         btnMostrarMinas.setText("Mostrar Minas");
-        btnMostrarMinas.setBackground(new java.awt.Color(255, 200, 0)); // Naranja
+        btnMostrarMinas.setBackground(Color.ORANGE);
         btnMostrarMinas.setForeground(Color.BLACK);
-        btnMostrarMinas.addActionListener(e -> mostrarMinasDemo());
+        btnMostrarMinas.addActionListener(e -> toggleMinasDemo());
 
         jLabel6.setBackground(new java.awt.Color(51, 51, 51));
-        jLabel6.setFont(new java.awt.Font("Segoe UI", 2, 24)); // NOI18N
+        jLabel6.setFont(new java.awt.Font("Segoe UI", 2, 24)); 
         jLabel6.setForeground(new java.awt.Color(255, 255, 255));
         jLabel6.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel6.setText("Tools");
@@ -520,17 +492,14 @@ public class Juego extends javax.swing.JPanel {
                 .addComponent(btnMostrarMinas, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(388, Short.MAX_VALUE))
         );
-
         add(jPanel4, java.awt.BorderLayout.LINE_END);
 
-        // --- FOOTER ---
         jPanel2.setBackground(new java.awt.Color(92, 103, 125));
-
-        jLabel3.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        jLabel3.setFont(new java.awt.Font("Segoe UI", 0, 18)); 
         jLabel3.setForeground(new java.awt.Color(255, 255, 255));
         jLabel3.setText("Mi tiempo:");
 
-        jLabel4.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel4.setFont(new java.awt.Font("Segoe UI", 0, 14)); 
         jLabel4.setForeground(new java.awt.Color(255, 255, 255));
         jLabel4.setText("00:00");
 
@@ -554,54 +523,18 @@ public class Juego extends javax.swing.JPanel {
                 .addComponent(jLabel4)
                 .addContainerGap(32, Short.MAX_VALUE))
         );
-
         add(jPanel2, java.awt.BorderLayout.PAGE_END);
 
-        // --- CENTRO (TABLERO) ---
         jPanel5.setBackground(new java.awt.Color(92, 103, 125));
         jPanel5.setLayout(new java.awt.BorderLayout());
-
+        
         jPanel6.setBackground(new java.awt.Color(92, 103, 125));
-
-        javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
-        jPanel6.setLayout(jPanel6Layout);
-        jPanel6Layout.setHorizontalGroup(
-            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel6Layout.createSequentialGroup()
-                .addContainerGap(40, Short.MAX_VALUE)
-                .addComponent(jLabel7, javax.swing.GroupLayout.PREFERRED_SIZE, 151, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
-        );
-        jPanel6Layout.setVerticalGroup(
-            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel6Layout.createSequentialGroup()
-                .addGap(123, 123, 123)
-                .addComponent(jLabel7)
-                .addContainerGap(449, Short.MAX_VALUE))
-        );
-
-        jPanel5.add(jPanel6, java.awt.BorderLayout.LINE_START);
-
+        jPanel6.setPreferredSize(new Dimension(40,0)); 
+        jPanel5.add(jPanel6, java.awt.BorderLayout.WEST);
+        
         jPanel7.setBackground(new java.awt.Color(92, 103, 125));
-
-        javax.swing.GroupLayout jPanel7Layout = new javax.swing.GroupLayout(jPanel7);
-        jPanel7.setLayout(jPanel7Layout);
-        jPanel7Layout.setHorizontalGroup(
-            jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel7Layout.createSequentialGroup()
-                .addContainerGap(40, Short.MAX_VALUE)
-                .addComponent(jLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, 151, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
-        );
-        jPanel7Layout.setVerticalGroup(
-            jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel7Layout.createSequentialGroup()
-                .addGap(123, 123, 123)
-                .addComponent(jLabel8)
-                .addContainerGap(449, Short.MAX_VALUE))
-        );
-
-        jPanel5.add(jPanel7, java.awt.BorderLayout.LINE_END);
+        jPanel7.setPreferredSize(new Dimension(40,0)); 
+        jPanel5.add(jPanel7, java.awt.BorderLayout.EAST);
 
         panelTablero1.setBackground(new java.awt.Color(255, 255, 255));
         panelTablero1.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(204, 204, 204), 6, true));
@@ -620,28 +553,11 @@ public class Juego extends javax.swing.JPanel {
         );
 
         jPanel5.add(panelTablero1, java.awt.BorderLayout.CENTER);
-
         add(jPanel5, java.awt.BorderLayout.CENTER);
     }
 
-    // Variables declaration - do not modify
     private javax.swing.JButton btnRegresar;
-    private javax.swing.JButton btnMostrarMinas; // Botón Nuevo
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
-    private javax.swing.JLabel jLabel6;
-    private javax.swing.JLabel jLabel7;
-    private javax.swing.JLabel jLabel8;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
-    private javax.swing.JPanel jPanel4;
-    private javax.swing.JPanel jPanel5;
-    private javax.swing.JPanel jPanel6;
-    private javax.swing.JPanel jPanel7;
-    private javax.swing.JPanel panelTablero1;
-    // End of variables declaration
+    private javax.swing.JButton btnMostrarMinas;
+    private javax.swing.JLabel jLabel1, jLabel2, jLabel3, jLabel4, jLabel5, jLabel6, jLabel7, jLabel8;
+    private javax.swing.JPanel jPanel1, jPanel2, jPanel3, jPanel4, jPanel5, jPanel6, jPanel7, panelTablero1;
 }
