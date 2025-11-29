@@ -13,3 +13,7 @@
 [27/11 00:04] 1 venció a 4 (Tablero 12) - 00:11|partida_1_vs_4_20251127_000425.log
 [27/11 00:06] PepePapas1 venció a 1 (Tablero 12) - 00:08|partida_1_vs_PepePapas1_20251127_000547.log
 [27/11 07:38] Gustag venció a Gustag (Tablero 10) - 00:29|partida_Gustag_vs_Gustag_20251127_073756.log
+[28/11 20:50] 1 venció a 2 (Tablero 10) - 00:04|partida_1_vs_2_20251128_205029.log
+[28/11 21:15] 2 venció a 1 (Tablero 10) - 00:11|partida_1_vs_2_20251128_211443.log
+[28/11 21:18] 1 venció a 2 (Tablero 12) - 00:17|partida_1_vs_2_20251128_211751.log
+[28/11 21:18] 2 venció a 1 (Tablero 10) - 00:13|partida_1_vs_2_20251128_211824.log

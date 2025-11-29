@@ -13,73 +13,87 @@ import proyectobuscaminas.Tablero.Tablero;
 
 public class Juego extends javax.swing.JPanel {
     
+
     private JButton[][] botones;
     private Tablero tableroLogico;
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
+    Random random = new Random();
     
     private boolean esMiTurno = false;
     private volatile boolean running = false;
     private int filas = 10;
     private int columnas = 10;
-    
+
     private Timer timerJuego;
     private int segundos = 0;
+    private boolean minasVisibles = false; // Estado del truco
     
-    private final Color COLOR_FONDO = new Color(92, 103, 125);
-    private final Color COLOR_MIO = new Color(46, 204, 113); 
-    private final Color COLOR_RIVAL = new Color(231, 76, 60); 
+
+    private final Color COLOR_MIO = new Color(46, 204, 113); // Verde
+    private final Color COLOR_RIVAL = new Color(231, 76, 60); // Rojo
     
     public Juego() {
         initComponents();
     }
 
-    private void ponerMusicaAleatoria() {
-        Random random = new Random();
-        int canciones = 6;
-        int opcion = random.nextInt(canciones);
 
-        Musica.getInstance().stopMusic();
-
-        switch(opcion){
-            case 0: Musica.getInstance().playMusic("recursos/ChaozFantasy.ogg"); break;
-            case 1: Musica.getInstance().playMusic("recursos/Roblox.ogg"); break;
-            case 2: Musica.getInstance().playMusic("recursos/FireAura.ogg"); break;
-            case 3: Musica.getInstance().playMusic("recursos/MyHeart.ogg"); break;
-            case 4: Musica.getInstance().playMusic("recursos/Stardust.ogg"); break;
-            case 5: Musica.getInstance().playMusic("recursos/FireEmblem.ogg"); break;
-            default: System.out.println("Error inesperado en música");
-        }
-    }
-
-    private void mostrarMinasDemo() {
+    // --- TRUCO MOSTRAR/OCULTAR MINAS ---
+    private void toggleMinasDemo() {
         if (tableroLogico == null || botones == null) return;
+        
+        minasVisibles = !minasVisibles; // Alternar estado
+        
+        // Cambiar texto del botón
+        if(minasVisibles) {
+            btnMostrarMinas.setText("Ocultar Minas");
+            btnMostrarMinas.setBackground(new Color(255, 100, 100));
+        } else {
+            btnMostrarMinas.setText("Mostrar Minas");
+            btnMostrarMinas.setBackground(Color.ORANGE);
+        }
         
         for (int i = 0; i < filas; i++) {
             for (int j = 0; j < columnas; j++) {
                 Casilla c = tableroLogico.getCasilla(i, j);
+                // Solo afectamos casillas no reveladas que sean minas
                 if (c.isMina() && botones[i][j].isEnabled()) {
-                    botones[i][j].setBackground(Color.MAGENTA);
-                    botones[i][j].setText("💣");
-                    botones[i][j].setForeground(Color.WHITE);
+                    if(minasVisibles) {
+                        botones[i][j].setBackground(Color.MAGENTA);
+                        botones[i][j].setText("💣");
+                        botones[i][j].setForeground(Color.WHITE);
+                    } else {
+                        // Restaurar apariencia normal
+                        botones[i][j].setBackground(new Color(230, 230, 230));
+                        botones[i][j].setText("");
+                        botones[i][j].setForeground(Color.BLACK);
+                    }
                 }
             }
         }
         this.requestFocusInWindow();
     }
 
+    // --- INICIO DEL JUEGO ---
     public void iniciarJuego(Socket s, ObjectOutputStream o, ObjectInputStream i, String rival, String yo) {
         if (running) return;
+        if(Musica.getInstance().isPlaying() == true && Musica.getInstance().wasPlayedOnce() == true){
+            elegirMusica();
+        }
         
         this.socket = s;
         this.out = o;
         this.in = i;
         this.running = true;
         this.esMiTurno = false;
+        this.minasVisibles = false;
         
-        ponerMusicaAleatoria();
+        // Reset botón truco
+        btnMostrarMinas.setText("Mostrar Minas");
+        btnMostrarMinas.setBackground(Color.ORANGE);
         
+        // UI Reset
         panelTablero1.removeAll();
         panelTablero1.setVisible(false);
         
@@ -89,8 +103,8 @@ public class Juego extends javax.swing.JPanel {
         jLabel2.setForeground(Color.WHITE);
         
         jLabel5.setText(yo + " VS " + rival);
-        jLabel5.setFont(new Font("Segoe UI", Font.BOLD, 32));
         
+        // Timer
         if (timerJuego != null) timerJuego.stop();
         segundos = 0;
         jLabel4.setText("00:00");
@@ -129,18 +143,12 @@ public class Juego extends javax.swing.JPanel {
 
         switch (msg.getTipo()) {
             case "VOTACION":
-                Object[] opciones = {"🟢 Fácil (8x8)", "🟡 Intermedio (10x10)", "🔴 Difícil (12x12)"};
-                JLabel lblMensaje = new JLabel("<html><h2>¡Rival Encontrado!</h2><p>Selecciona la dificultad del mapa:</p></html>");
-                lblMensaje.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-
-                int sel = JOptionPane.showOptionDialog(this, 
-                        lblMensaje, 
-                        "Votación de Mapa", 
-                        JOptionPane.DEFAULT_OPTION, 
-                        JOptionPane.QUESTION_MESSAGE, 
-                        null, 
-                        opciones, 
-                        opciones[1]);
+                Object[] opciones = {"Principiante (8x8)", "Normal (10x10)", "Experto (12x12)"};
+                JLabel lbl = new JLabel("<html><h3>¡Rival Encontrado!</h3>Selecciona dificultad:</html>");
+                lbl.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+                
+                int sel = JOptionPane.showOptionDialog(this, lbl, "Votación", 
+                        JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, opciones, opciones[1]);
 
                 String voto = "10";
                 if (sel == 0) voto = "8";
@@ -201,22 +209,20 @@ public class Juego extends javax.swing.JPanel {
                 break;
 
             case "GANASTE":
+                Musica.getInstance().playSFX("recursos/Yay.ogg");
             case "PERDISTE":
                 timerJuego.stop();
                 running = false;
                 
-                String tituloFin = msg.getTipo().equals("GANASTE") ? "🏆 ¡VICTORIA!" : "💀 DERROTA";
-                String msjFin = (String) msg.getContenido();
-                
-                int res = JOptionPane.showConfirmDialog(this, 
-                        "<html><h3>" + msjFin + "</h3><br>¿Quieres jugar otra vez?</html>", 
-                        tituloFin, 
-                        JOptionPane.YES_NO_OPTION);
+                String titulo = msg.getTipo().equals("GANASTE") ? "¡VICTORIA!" : "DERROTA";
+                int r = JOptionPane.showConfirmDialog(this, 
+                        "<html><h2>" + titulo + "</h2><br>¿Jugar otra vez?</html>", 
+                        "Fin de Partida", JOptionPane.YES_NO_OPTION);
                 
                 try { socket.close(); } catch(IOException e){}
                 btnRegresar.doClick();
                 
-                if (res == JOptionPane.YES_OPTION) {
+                if (r == JOptionPane.YES_OPTION) {
                     Container parent = getParent();
                     for(Component c : parent.getComponents()) {
                         if(c instanceof Menu) ((Menu)c).solicitarPartidaAutomatica();
@@ -241,6 +247,7 @@ public class Juego extends javax.swing.JPanel {
         for (int i = 0; i < filas; i++) {
             for (int j = 0; j < columnas; j++) {
                 JButton btn = new JButton();
+                // ESTILO PLANO
                 btn.setFocusable(false);
                 btn.setMargin(new Insets(0,0,0,0));
                 btn.setBackground(new Color(230, 230, 230));
@@ -251,23 +258,25 @@ public class Juego extends javax.swing.JPanel {
                 final int c = j;
                 
                 btn.addActionListener(e -> {
-                    // SONIDO AL CLICK IZQUIERDO
-                    Musica.getInstance().playSFX("recursos/Click2.ogg");
-                    
                     if (btn.getText().equals("🚩")) return;
-                    
                     if(esMiTurno && !tableroLogico.getCasilla(f, c).esRevelado()) {
-                        if(tableroLogico.getCasilla(f, c).isMina()) enviar("PERDIO", null);
-                        else enviar("CLICK", f + "," + c);
+                        if(tableroLogico.getCasilla(f, c).isMina()){
+                            enviar("PERDIO", null);
+                            Musica.getInstance().playSFX("recursos/Bomb.ogg");
+                        }else{
+                            enviar("CLICK", f + "," + c);
+                            Musica.getInstance().playSFX("recursos/Click2.ogg");
+                        }
                     }
                 });
                 
                 btn.addMouseListener(new MouseAdapter() {
                     public void mouseClicked(MouseEvent e) {
+                        Musica.getInstance().playSFX("recursos/Flag.ogg");
                         if (SwingUtilities.isRightMouseButton(e) && btn.isEnabled()) {
-                            // SONIDO AL CLICK DERECHO
-                            Musica.getInstance().playSFX("recursos/Click2.ogg");
-                            
+                            // Si las minas están visibles por el truco, no poner banderas
+                            if(minasVisibles && btn.getText().equals("💣")) return;
+
                             if (btn.getText().equals("🚩")) {
                                 btn.setText("");
                                 btn.setForeground(Color.BLACK);
@@ -301,6 +310,7 @@ public class Juego extends javax.swing.JPanel {
         if(v > 0) {
             btn.setText(String.valueOf(v));
             btn.setFont(new Font("Segoe UI Black", Font.BOLD, 16));
+            // COLORES OFICIALES
             switch (v) {
                 case 1: btn.setForeground(Color.BLUE); break;
                 case 2: btn.setForeground(new Color(0, 128, 0)); break;
@@ -325,9 +335,11 @@ public class Juego extends javax.swing.JPanel {
     
     private void salirLimpiamente() {
         running = false;
-        Musica.getInstance().stopMusic();
-        Musica.getInstance().playMusic("recursos/MainTheme.ogg");
         CardLayout cl = (CardLayout) getParent().getLayout();
+        if(Musica.getInstance().isPlaying() == true){
+            Musica.getInstance().stopMusic();
+            Musica.getInstance().playMusic("recursos/MainTheme.ogg");
+        }
         cl.show(getParent(), "menu");
     }
     
@@ -335,7 +347,51 @@ public class Juego extends javax.swing.JPanel {
         try { socket.close(); } catch(IOException e){}
         salirLimpiamente();
     }
+    
+    private void elegirMusica(){
+        // Número de canciones
+        int canciones = 6;
 
+        // Elegir un índice aleatorio
+        int opcion = random.nextInt(canciones);
+
+        switch(opcion){
+            case 0:
+                Musica.getInstance().stopMusic();
+                Musica.getInstance().playMusic("recursos/ChaozFantasy.ogg");
+                break;
+
+            case 1:
+                Musica.getInstance().stopMusic();
+                Musica.getInstance().playMusic("recursos/Roblox.ogg");
+                break;
+                
+            case 2:
+                Musica.getInstance().stopMusic();
+                Musica.getInstance().playMusic("recursos/FireAura.ogg");
+                break;
+                
+            case 3:
+                Musica.getInstance().stopMusic();
+                Musica.getInstance().playMusic("recursos/MyHeart.ogg");
+                break;
+                
+            case 4:
+                Musica.getInstance().stopMusic();
+                Musica.getInstance().playMusic("recursos/Stardust.ogg");
+                break;
+                
+            case 5:
+                Musica.getInstance().stopMusic();
+                Musica.getInstance().playMusic("recursos/FireEmblem.ogg");
+                break;
+
+            default:
+                System.out.println("Error inesperado");
+        }
+    }
+
+    // --- DISEÑO ORIGINAL RESTAURADO + BOTÓN HACK ---
     @SuppressWarnings("unchecked")
     private void initComponents() {
 
@@ -344,10 +400,12 @@ public class Juego extends javax.swing.JPanel {
         jPanel3 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
+        
         jPanel4 = new javax.swing.JPanel();
         btnRegresar = new javax.swing.JButton();
-        btnMostrarMinas = new javax.swing.JButton();
+        btnMostrarMinas = new javax.swing.JButton(); // Nuevo
         jLabel6 = new javax.swing.JLabel();
+        
         jPanel2 = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
@@ -366,79 +424,174 @@ public class Juego extends javax.swing.JPanel {
         jLabel5.setForeground(new java.awt.Color(255, 255, 255));
         jLabel5.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         jLabel5.setText("Buscaminas");
-        jPanel1.add(jLabel5);
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(39, 39, 39)
+                .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 629, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(797, Short.MAX_VALUE))
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(14, 14, 14)
+                .addComponent(jLabel5)
+                .addContainerGap(22, Short.MAX_VALUE))
+        );
         add(jPanel1, java.awt.BorderLayout.PAGE_START);
 
         jPanel3.setBackground(new java.awt.Color(92, 103, 125));
+        jLabel1.setBackground(new java.awt.Color(51, 51, 51));
         jLabel1.setFont(new java.awt.Font("Segoe UI", 0, 24)); 
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Estado");
-        jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 16)); 
+
+        jLabel2.setFont(new java.awt.Font("Segoe UI", 0, 14)); 
         jLabel2.setForeground(new java.awt.Color(255, 255, 255));
         jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel2.setText("Esperando...");
-        jPanel3.add(jLabel1); jPanel3.add(jLabel2);
-        add(jPanel3, java.awt.BorderLayout.WEST);
 
+        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
+        jPanel3.setLayout(jPanel3Layout);
+        jPanel3Layout.setHorizontalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 197, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addGap(46, 46, 46)
+                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        jPanel3Layout.setVerticalGroup(
+            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel3Layout.createSequentialGroup()
+                .addGap(21, 21, 21)
+                .addComponent(jLabel1)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel2)
+                .addContainerGap(493, Short.MAX_VALUE))
+        );
+        add(jPanel3, java.awt.BorderLayout.LINE_START);
+
+        // --- PANEL DERECHO CON TUS BOTONES ---
         jPanel4.setBackground(new java.awt.Color(92, 103, 125));
-        
-        jLabel6.setFont(new java.awt.Font("Segoe UI", 2, 24)); 
-        jLabel6.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel6.setText("Tools");
-        
+
         btnRegresar.setFont(new java.awt.Font("Segoe UI", 1, 14)); 
         btnRegresar.setText("Salir");
         btnRegresar.setBackground(new Color(231, 76, 60)); 
         btnRegresar.setForeground(Color.WHITE);
-        btnRegresar.setFocusable(false);
-        btnRegresar.setMaximumSize(new Dimension(150, 40));
-        btnRegresar.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnRegresar.addActionListener(e -> btnRegresarActionPerformed(e));
-        
+
         btnMostrarMinas.setFont(new java.awt.Font("Segoe UI", 1, 12));
         btnMostrarMinas.setText("Mostrar Minas");
         btnMostrarMinas.setBackground(Color.ORANGE);
         btnMostrarMinas.setForeground(Color.BLACK);
-        btnMostrarMinas.setFocusable(false);
-        btnMostrarMinas.setMaximumSize(new Dimension(150, 40));
-        btnMostrarMinas.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnMostrarMinas.addActionListener(e -> mostrarMinasDemo());
-        
-        jPanel4.add(jLabel6);
-        jPanel4.add(Box.createVerticalStrut(20));
-        jPanel4.add(btnRegresar);
-        jPanel4.add(Box.createVerticalStrut(10));
-        jPanel4.add(btnMostrarMinas);
-        
+        btnMostrarMinas.addActionListener(e -> toggleMinasDemo());
+
+        jLabel6.setBackground(new java.awt.Color(51, 51, 51));
+        jLabel6.setFont(new java.awt.Font("Segoe UI", 2, 24)); 
+        jLabel6.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel6.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel6.setText("Tools");
+
+        javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
+        jPanel4.setLayout(jPanel4Layout);
+        jPanel4Layout.setHorizontalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
+                        .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 185, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap())
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
+                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(btnRegresar, javax.swing.GroupLayout.DEFAULT_SIZE, 123, Short.MAX_VALUE)
+                            .addComponent(btnMostrarMinas, javax.swing.GroupLayout.DEFAULT_SIZE, 123, Short.MAX_VALUE))
+                        .addGap(36, 36, 36))))
+        );
+        jPanel4Layout.setVerticalGroup(
+            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel4Layout.createSequentialGroup()
+                .addGap(33, 33, 33)
+                .addComponent(jLabel6)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(btnRegresar, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(btnMostrarMinas, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(388, Short.MAX_VALUE))
+        );
         add(jPanel4, java.awt.BorderLayout.LINE_END);
 
         jPanel2.setBackground(new java.awt.Color(92, 103, 125));
         jLabel3.setFont(new java.awt.Font("Segoe UI", 0, 18)); 
         jLabel3.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel3.setText("Tiempo:");
+        jLabel3.setText("Mi tiempo:");
+
         jLabel4.setFont(new java.awt.Font("Segoe UI", 0, 14)); 
         jLabel4.setForeground(new java.awt.Color(255, 255, 255));
         jLabel4.setText("00:00");
-        jPanel2.add(jLabel3); jPanel2.add(jLabel4);
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addGap(23, 23, 23)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel4)
+                    .addComponent(jLabel3))
+                .addContainerGap(1353, Short.MAX_VALUE))
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addGap(17, 17, 17)
+                .addComponent(jLabel3)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel4)
+                .addContainerGap(32, Short.MAX_VALUE))
+        );
         add(jPanel2, java.awt.BorderLayout.PAGE_END);
 
         jPanel5.setBackground(new java.awt.Color(92, 103, 125));
         jPanel5.setLayout(new java.awt.BorderLayout());
-        jPanel6.setBackground(new java.awt.Color(92, 103, 125)); jPanel6.setPreferredSize(new Dimension(40,0)); 
+        
+        jPanel6.setBackground(new java.awt.Color(92, 103, 125));
+        jPanel6.setPreferredSize(new Dimension(40,0)); 
         jPanel5.add(jPanel6, java.awt.BorderLayout.WEST);
-        jPanel7.setBackground(new java.awt.Color(92, 103, 125)); jPanel7.setPreferredSize(new Dimension(40,0)); 
+        
+        jPanel7.setBackground(new java.awt.Color(92, 103, 125));
+        jPanel7.setPreferredSize(new Dimension(40,0)); 
         jPanel5.add(jPanel7, java.awt.BorderLayout.EAST);
-        panelTablero1.setBackground(Color.WHITE);
-        panelTablero1.setBorder(BorderFactory.createLineBorder(new Color(204,204,204), 6));
+
+        panelTablero1.setBackground(new java.awt.Color(255, 255, 255));
+        panelTablero1.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(204, 204, 204), 6, true));
+        panelTablero1.setMaximumSize(new java.awt.Dimension(450, 450));
+        panelTablero1.setMinimumSize(new java.awt.Dimension(450, 450));
+
+        javax.swing.GroupLayout panelTablero1Layout = new javax.swing.GroupLayout(panelTablero1);
+        panelTablero1.setLayout(panelTablero1Layout);
+        panelTablero1Layout.setHorizontalGroup(
+            panelTablero1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 665, Short.MAX_VALUE)
+        );
+        panelTablero1Layout.setVerticalGroup(
+            panelTablero1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 560, Short.MAX_VALUE)
+        );
+
         jPanel5.add(panelTablero1, java.awt.BorderLayout.CENTER);
         add(jPanel5, java.awt.BorderLayout.CENTER);
     }
-    
+
     private javax.swing.JButton btnRegresar;
     private javax.swing.JButton btnMostrarMinas;
     private javax.swing.JLabel jLabel1, jLabel2, jLabel3, jLabel4, jLabel5, jLabel6, jLabel7, jLabel8;
     private javax.swing.JPanel jPanel1, jPanel2, jPanel3, jPanel4, jPanel5, jPanel6, jPanel7, panelTablero1;
 }
-
-

@@ -37,7 +37,7 @@ public class ServidorBuscaminas {
 
     private static void intentarEmparejar() {
         synchronized(clientesEnEspera) {
-            // Limpiar desconectados
+         
             clientesEnEspera.removeIf(c -> c.socket.isClosed() || !c.conectado);
             
             if (clientesEnEspera.size() >= 2) {
@@ -54,9 +54,6 @@ public class ServidorBuscaminas {
         }
     }
 
-    // =========================================================================
-    // CLASE PARTIDA
-    // =========================================================================
     static class Partida implements Runnable {
         private final ManejadorCliente j1;
         private final ManejadorCliente j2;
@@ -65,7 +62,7 @@ public class ServidorBuscaminas {
         private Tablero[] tableros;
         private volatile boolean activa = true;
         private long tiempoInicio;
-        private String nombreLog; // Nombre del archivo de log
+        private String nombreLog;
 
         public Partida(ManejadorCliente j1, ManejadorCliente j2) {
             this.j1 = j1;
@@ -199,7 +196,7 @@ public class ServidorBuscaminas {
                 g.enviar(new Mensaje("GANASTE", r));
                 p.enviar(new Mensaje("PERDISTE", "Has perdido."));
                 
-                // Guardar historial referenciando el log
+              
                 persistencia.guardarResultado(g.nombre, p.nombre, "Tablero " + dificultad, tiempoFinal, nombreLog);
             } catch(Exception e){} finally { limpiar(); }
         }
@@ -227,9 +224,7 @@ public class ServidorBuscaminas {
         }
     }
 
-    // =========================================================================
-    // MANEJADOR CLIENTE
-    // =========================================================================
+   
     static class ManejadorCliente implements Runnable {
         Socket socket; ObjectOutputStream out; ObjectInputStream in;
         String nombre = "Anónimo"; boolean logueado = false; boolean conectado = true;

@@ -21,12 +21,18 @@ public class Musica {
         return instance;
     }
 
-    // Tu método original para leer OGG/WAV
+    /**
+     * Convierte cualquier formato (incluyendo OGG) a PCM_SIGNED.
+     * Esto es obligatorio porque Clip NO puede reproducir directamente Vorbis.
+     */
     private AudioInputStream getPCMStream(String filePath) throws Exception {
         File file = new File(filePath);
+
+        // Stream original (OGG, WAV, etc.)
         AudioInputStream originalStream = AudioSystem.getAudioInputStream(file);
         AudioFormat baseFormat = originalStream.getFormat();
 
+        // Convertir a formato compatible
         AudioFormat decodedFormat = new AudioFormat(
                 AudioFormat.Encoding.PCM_SIGNED,
                 baseFormat.getSampleRate(),
@@ -40,10 +46,10 @@ public class Musica {
         return AudioSystem.getAudioInputStream(decodedFormat, originalStream);
     }
 
+    /**
+     * Reproduce música en bucle.
+     */
     public void playMusic(String filePath) {
-        // 1. Detener cualquier música anterior antes de empezar una nueva
-        stopMusic(); 
-
         try {
             AudioInputStream pcmStream = getPCMStream(filePath);
 
@@ -57,35 +63,35 @@ public class Musica {
             wasPlayedOnce = true;
 
         } catch (Exception e) {
-            System.err.println("Error al reproducir música: " + e.getMessage());
-            // Si falla, aseguramos que el estado sea false
-            isPlaying = false; 
+            System.err.println("Error al reproducir música OGG/WAV: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
+    /**
+     * Reproduce efectos de sonido (sin loop)
+     */
     public void playSFX(String filePath) {
         try {
             AudioInputStream pcmStream = getPCMStream(filePath);
+
             Clip sfx = AudioSystem.getClip();
             sfx.open(pcmStream);
             sfx.start();
+
         } catch (Exception e) {
-            System.err.println("Error SFX: " + e.getMessage());
+            System.err.println("Error al reproducir SFX OGG/WAV: " + e.getMessage());
         }
     }
 
+    /**
+     * Detener música
+     */
     public void stopMusic() {
-        if (audioClip != null) {
-            try {
-                // Detener y cerrar para liberar memoria
-                audioClip.stop();
-                audioClip.close(); 
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        if (audioClip != null && audioClip.isRunning()) {
+            audioClip.stop();
+            isPlaying = false;
         }
-        // 2. CORRECCIÓN CRÍTICA: Forzar el estado a false SIEMPRE
-        isPlaying = false; 
     }
 
     public boolean isPlaying() {
