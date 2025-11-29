@@ -40,12 +40,10 @@ public class Menu extends Fondo {
         deco.agregarAnimacionHover(btnRegistro);
         deco.agregarAnimacionHover(btnRecords);
 
-        // Sincronizar texto inicial
         if (Musica.getInstance().isPlaying()) btnMusic.setText("ON");
         else btnMusic.setText("OFF");
     }
 
-    // --- PANTALLA DE CARGA ---
     private void initGlassPane() {
         glassPanel = new JPanel() {
             @Override
@@ -141,7 +139,6 @@ public class Menu extends Fondo {
         }
     }
 
-    // --- BOTÓN MÚSICA ARREGLADO ---
     private void btnMusicActionPerformed(java.awt.event.ActionEvent evt) {                                         
         Musica.getInstance().playSFX("recursos/Click2.ogg");
         if(Musica.getInstance().isPlaying()){
@@ -153,7 +150,6 @@ public class Menu extends Fondo {
         }
     }  
 
-    // --- RESTO DE BOTONES ---
     private void btnJugarActionPerformed(java.awt.event.ActionEvent evt) {                                         
         if (!asegurarConexion()) return;
         if (!isLogueado) { JOptionPane.showMessageDialog(this, "Inicia sesión primero."); return; }

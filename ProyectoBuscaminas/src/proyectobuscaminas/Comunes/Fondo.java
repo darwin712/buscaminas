@@ -13,9 +13,7 @@ import javax.swing.JPanel;
  */
 public class Fondo extends javax.swing.JPanel {
     private Image imagen;
-    /**
-     * Creates new form Fondo
-     */
+
     public Fondo(String ruta) {
         imagen = new ImageIcon(getClass().getResource(ruta)).getImage();
         initComponents();

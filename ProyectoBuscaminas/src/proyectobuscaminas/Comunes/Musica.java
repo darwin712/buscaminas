@@ -21,18 +21,12 @@ public class Musica {
         return instance;
     }
 
-    /**
-     * Convierte cualquier formato (incluyendo OGG) a PCM_SIGNED.
-     * Esto es obligatorio porque Clip NO puede reproducir directamente Vorbis.
-     */
     private AudioInputStream getPCMStream(String filePath) throws Exception {
         File file = new File(filePath);
 
-        // Stream original (OGG, WAV, etc.)
         AudioInputStream originalStream = AudioSystem.getAudioInputStream(file);
         AudioFormat baseFormat = originalStream.getFormat();
 
-        // Convertir a formato compatible
         AudioFormat decodedFormat = new AudioFormat(
                 AudioFormat.Encoding.PCM_SIGNED,
                 baseFormat.getSampleRate(),
@@ -46,9 +40,6 @@ public class Musica {
         return AudioSystem.getAudioInputStream(decodedFormat, originalStream);
     }
 
-    /**
-     * Reproduce música en bucle.
-     */
     public void playMusic(String filePath) {
         try {
             AudioInputStream pcmStream = getPCMStream(filePath);
@@ -68,9 +59,6 @@ public class Musica {
         }
     }
 
-    /**
-     * Reproduce efectos de sonido (sin loop)
-     */
     public void playSFX(String filePath) {
         try {
             AudioInputStream pcmStream = getPCMStream(filePath);
@@ -84,9 +72,6 @@ public class Musica {
         }
     }
 
-    /**
-     * Detener música
-     */
     public void stopMusic() {
         if (audioClip != null && audioClip.isRunning()) {
             audioClip.stop();

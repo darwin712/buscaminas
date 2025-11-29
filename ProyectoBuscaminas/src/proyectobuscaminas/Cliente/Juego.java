@@ -38,14 +38,11 @@ public class Juego extends javax.swing.JPanel {
         initComponents();
     }
 
-
-    // --- TRUCO MOSTRAR/OCULTAR MINAS ---
     private void toggleMinasDemo() {
         if (tableroLogico == null || botones == null) return;
         
-        minasVisibles = !minasVisibles; // Alternar estado
+        minasVisibles = !minasVisibles;
         
-        // Cambiar texto del botón
         if(minasVisibles) {
             btnMostrarMinas.setText("Ocultar Minas");
             btnMostrarMinas.setBackground(new Color(255, 100, 100));
@@ -57,14 +54,12 @@ public class Juego extends javax.swing.JPanel {
         for (int i = 0; i < filas; i++) {
             for (int j = 0; j < columnas; j++) {
                 Casilla c = tableroLogico.getCasilla(i, j);
-                // Solo afectamos casillas no reveladas que sean minas
                 if (c.isMina() && botones[i][j].isEnabled()) {
                     if(minasVisibles) {
                         botones[i][j].setBackground(Color.MAGENTA);
                         botones[i][j].setText("💣");
                         botones[i][j].setForeground(Color.WHITE);
                     } else {
-                        // Restaurar apariencia normal
                         botones[i][j].setBackground(new Color(230, 230, 230));
                         botones[i][j].setText("");
                         botones[i][j].setForeground(Color.BLACK);
@@ -75,7 +70,6 @@ public class Juego extends javax.swing.JPanel {
         this.requestFocusInWindow();
     }
 
-    // --- INICIO DEL JUEGO ---
     public void iniciarJuego(Socket s, ObjectOutputStream o, ObjectInputStream i, String rival, String yo) {
         if (running) return;
         if(Musica.getInstance().isPlaying() == true && Musica.getInstance().wasPlayedOnce() == true){
@@ -89,11 +83,9 @@ public class Juego extends javax.swing.JPanel {
         this.esMiTurno = false;
         this.minasVisibles = false;
         
-        // Reset botón truco
         btnMostrarMinas.setText("Mostrar Minas");
         btnMostrarMinas.setBackground(Color.ORANGE);
         
-        // UI Reset
         panelTablero1.removeAll();
         panelTablero1.setVisible(false);
         
@@ -104,7 +96,6 @@ public class Juego extends javax.swing.JPanel {
         
         jLabel5.setText(yo + " VS " + rival);
         
-        // Timer
         if (timerJuego != null) timerJuego.stop();
         segundos = 0;
         jLabel4.setText("00:00");
@@ -247,7 +238,6 @@ public class Juego extends javax.swing.JPanel {
         for (int i = 0; i < filas; i++) {
             for (int j = 0; j < columnas; j++) {
                 JButton btn = new JButton();
-                // ESTILO PLANO
                 btn.setFocusable(false);
                 btn.setMargin(new Insets(0,0,0,0));
                 btn.setBackground(new Color(230, 230, 230));
@@ -310,7 +300,6 @@ public class Juego extends javax.swing.JPanel {
         if(v > 0) {
             btn.setText(String.valueOf(v));
             btn.setFont(new Font("Segoe UI Black", Font.BOLD, 16));
-            // COLORES OFICIALES
             switch (v) {
                 case 1: btn.setForeground(Color.BLUE); break;
                 case 2: btn.setForeground(new Color(0, 128, 0)); break;
@@ -349,10 +338,8 @@ public class Juego extends javax.swing.JPanel {
     }
     
     private void elegirMusica(){
-        // Número de canciones
         int canciones = 6;
 
-        // Elegir un índice aleatorio
         int opcion = random.nextInt(canciones);
 
         switch(opcion){
@@ -391,7 +378,6 @@ public class Juego extends javax.swing.JPanel {
         }
     }
 
-    // --- DISEÑO ORIGINAL RESTAURADO + BOTÓN HACK ---
     @SuppressWarnings("unchecked")
     private void initComponents() {
 
@@ -403,7 +389,7 @@ public class Juego extends javax.swing.JPanel {
         
         jPanel4 = new javax.swing.JPanel();
         btnRegresar = new javax.swing.JButton();
-        btnMostrarMinas = new javax.swing.JButton(); // Nuevo
+        btnMostrarMinas = new javax.swing.JButton();
         jLabel6 = new javax.swing.JLabel();
         
         jPanel2 = new javax.swing.JPanel();
@@ -478,7 +464,6 @@ public class Juego extends javax.swing.JPanel {
         );
         add(jPanel3, java.awt.BorderLayout.LINE_START);
 
-        // --- PANEL DERECHO CON TUS BOTONES ---
         jPanel4.setBackground(new java.awt.Color(92, 103, 125));
 
         btnRegresar.setFont(new java.awt.Font("Segoe UI", 1, 14)); 
